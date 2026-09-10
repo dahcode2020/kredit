@@ -1,1 +1,3 @@
-export class Decision-engineModule {}
+import { Module } from "@nestjs/common";
+@Module({})
+export class DecisionEngineModule {}
