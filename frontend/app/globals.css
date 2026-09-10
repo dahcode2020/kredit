@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #FF4A17;
+}
+
+html { scroll-behavior: smooth; }
+body { @apply bg-white text-ink antialiased font-body; }
+h1,h2,h3,h4 { @apply font-display; }
+
+/* Dewi-inspired utilities */
+.nav-link { @apply text-white/90 hover:text-white text-[13px] tracking-widest font-semibold uppercase transition; }
+.section-title { @apply text-[13px] tracking-[0.18em] font-bold text-primary uppercase; }
+.section-heading { @apply text-[32px] md:text-[40px] font-extrabold leading-tight text-ink; }
+.glass { @apply bg-white/95 backdrop-blur; }
+
+/* custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
