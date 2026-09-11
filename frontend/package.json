@@ -13,7 +13,7 @@
     "test:a11y": "jest --testPathPattern='tests/a11y'",
     "test:e2e": "playwright test",
     "test:cov": "jest --coverage",
-    "check:hydration": "node scripts/check-hydration.mjs",
+    "check:hydration": "node scripts/check-hydration.mjs && node scripts/check-dom-nesting.mjs",
     "check:hydrate": "node scripts/hydrate-check.mjs"
   },
   "dependencies": {

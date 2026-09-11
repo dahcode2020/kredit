@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, Globe, Shield, ChevronDown, Check, LogOut, LayoutDashboard } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { buttonClasses } from "@/components/ui/Button";
 import { Locale, locales, t, setPersistedLocale } from "@/lib/i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -140,7 +140,7 @@ export default function Header({ locale }: { locale: Locale }) {
           ) : (
             <>
               <Link href={`/${locale}#auth`} className="text-white/90 hover:text-white text-[13px] font-semibold whitespace-nowrap hidden xl:inline"> {tr("nav.login")} </Link>
-              <Link href={`/${locale}#simulateur`} className="shrink-0"><Button size="md" className="!h-9 !px-5 !text-[13px] whitespace-nowrap">{tr("nav.cta")}</Button></Link>
+              <Link href={`/${locale}#simulateur`} className={buttonClasses("primary", "md", "!h-9 !px-5 !text-[13px] whitespace-nowrap shrink-0")}>{tr("nav.cta")}</Link>
             </>
           )}
         </div>
@@ -202,7 +202,7 @@ export default function Header({ locale }: { locale: Locale }) {
             ) : (
               <>
                 <Link href={`/${locale}#auth`} onClick={()=>setOpen(false)} className="h-11 rounded-full bg-white/10 border border-white/15 text-white font-semibold grid place-items-center">{tr("nav.login")}</Link>
-                <Link href={`/${locale}#simulateur`} onClick={()=>setOpen(false)}><Button className="w-full !h-11">{tr("nav.cta")}</Button></Link>
+                <Link href={`/${locale}#simulateur`} onClick={()=>setOpen(false)} className={buttonClasses("primary", "md", "w-full !h-11")}>{tr("nav.cta")}</Link>
               </>
             )}
           </div>

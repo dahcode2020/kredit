@@ -54,7 +54,15 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
    (`components/layout/HtmlLang.tsx`) applique `lang`/`dir` après hydratation — mutation hors
    arbre React, donc sans risque d'hydratation.
 
-7. **Le service worker ne doit jamais servir un document HTML périmé.** Le SW precachait
+7. **Balisage valide, sinon le navigateur réécrit le DOM.** Un `<div>` dans un `<p>` ferme le
+   `<p>` ; un `<li>` hors `<ul>` est remonté ; un `<button>` dans un `<a>` est un contenu
+   interactif imbriqué interdit. Le HTML parsé ne correspond plus à l'arbre React → mismatch.
+   Le projet rendait donc `<Link><Button/></Link>` sur le hero et dans le header ; `Button`
+   expose maintenant `buttonClasses(variant, size, className)` pour poser le style sur le
+   `<Link>` lui-même (`app/[locale]/page.tsx`, `components/layout/Header.tsx`).
+   Détecté par `node scripts/check-dom-nesting.mjs` (inclus dans `npm run check:hydration`).
+
+8. **Le service worker ne doit jamais servir un document HTML périmé.** Le SW precachait
    `/`, `/fr`, `/en`, `/nl`, `/de` et écrivait les réponses de navigation en cache : après un
    déploiement, le navigateur recevait l'ancien HTML avec les nouveaux chunks → hydratation
    cassée, et le cache ne se purgeait que si `VERSION` était bumpé à la main.
@@ -67,7 +75,7 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
 
 ```bash
 cd frontend
-npm run check:hydration          # garde-fou statique (zéro dépendance)
+npm run check:hydration          # garde-fous statiques (zéro dépendance) : APIs au render + imbrications HTML
 npx next build                   # le prerender de toutes les pages [locale] casse si un render touche une API navigateur
 ```
 

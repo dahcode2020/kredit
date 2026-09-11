@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 type User = { id: string; email: string; role: "CUSTOMER" | "ADMIN" | "SUPER_ADMIN"; locale: string; firstName?: string; lastName?: string };
 type AuthState = {
@@ -84,24 +84,49 @@ export const useAuth = create<AuthState>()(
   )
 );
 
-// Helper for components that need to wait hydration before deciding auth
-// isAuthenticated est false tant que hasHydrated === false → évite hydration mismatch (server pulse vs client pill)
+// Helper pour les composants qui doivent attendre l'hydratation du store avant de décider
+// de l'état connecté. `isAuthenticated` reste false tant que `_hasHydrated` est false :
+// le premier rendu du client est ainsi identique au HTML du serveur (pas de mismatch),
+// et le squelette est remplacé juste après l'hydratation.
 export function useAuthHydrated() {
   const hasHydrated = useAuth((s) => s._hasHydrated);
   const user = useAuth((s) => s.user);
   const token = useAuth((s) => s.accessToken);
+
   useEffect(() => {
-    if (!hasHydrated) {
-      // @ts-ignore persist exists
-      useAuth.persist.rehydrate();
+    if (hasHydrated) return;
+    let cancelled = false;
+    // Filet de sécurité: `_hasHydrated` doit passer true MÊME si la rehydratation échoue
+    // (JSON corrompu dans localStorage, storage bloqué en navigation privée, quota dépassé).
+    // Sinon le composant reste bloqué sur le squelette « non connecté » à chaque refresh.
+    const finish = () => {
+      if (!cancelled && !useAuth.getState()._hasHydrated) useAuth.setState({ _hasHydrated: true });
+    };
+    try {
+      const r = (useAuth as any).persist?.rehydrate?.();
+      if (r && typeof r.then === "function") r.then(finish, finish);
+      else finish();
+    } catch {
+      finish();
     }
+    return () => { cancelled = true; };
   }, [hasHydrated]);
+
   return { hasHydrated, isAuthenticated: hasHydrated && !!user && !!token, user, token };
 }
 
-// Hook générique pour éviter hydration mismatch sur tout contenu client-only
+/**
+ * Contenus « client-only » (localStorage, taille d'écran, heure locale…) : à n'afficher
+ * qu'après hydratation. `useSyncExternalStore` plutôt qu'un `useState`+`useEffect` parce que
+ * le snapshot serveur (`false`) est lu de façon synchrone par React, y compris sous
+ * Suspense/streaming — un flag posé en effect peut être raté et réintroduire le mismatch.
+ */
+const subscribeNoop = () => () => {};
 export function useHasMounted() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted;
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
 }
+

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Badge, Button } from "@/components/ui/Button";
+import { Badge, Button, buttonClasses } from "@/components/ui/Button";
 import Simulator from "@/components/credit/Simulator";
 import { Locale, t } from "@/lib/i18n";
 import { useAuth, useAuthHydrated } from "@/hooks/useAuth";
@@ -53,7 +53,7 @@ export default function Page({ params }: { params: { locale: string } }) {
               <p className="mt-5 text-[15px] leading-7 text-white/70 max-w-[560px]">{tr("hero.subtitle")}</p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="#simulateur"><Button size="lg" className="gap-2">{tr("hero.cta1")} <ArrowRight className="w-4 h-4" /></Button></Link>
+                <Link href="#simulateur" className={buttonClasses("primary", "lg", "gap-2")}>{tr("hero.cta1")} <ArrowRight className="w-4 h-4" /></Link>
                 <a href="#about" className="inline-flex items-center gap-3 h-[48px] px-6 rounded-full bg-white text-ink font-bold text-sm hover:bg-white/90 transition"><span className="w-8 h-8 rounded-full bg-ink text-white grid place-items-center"><Play className="w-3.5 h-3.5 ml-0.5" /></span>{tr("hero.cta2")}</a>
               </div>
 
