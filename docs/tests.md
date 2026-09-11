@@ -90,6 +90,9 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   valeur invalide → chaîne vide et non `RangeError`), pureté de `relativeTime` (échoue dès que
   l'horloge est lue au calcul), et **hydratation** de `<RelativeTime>` : `renderToString` →
   `hydrateRoot` en écoutant `console.error` + `onRecoverableError`
+- `tests/unit/shell-i18n.spec.tsx` — coquilles customer/admin montées pour les 4 locales : navigation,
+  écrans d'accès, bandeau MFA et alertes viennent du dictionnaire, aucune chaîne française ne subsiste
+  hors `fr`, et le premier rendu (skeleton) est **identique** quelle que soit la locale (rien à hydrater)
 - `tests/unit/i18n-metadata.spec.ts` — parité `fr/en/nl/de` des 11 namespaces (clés, variables ICU,
   blocs `plural`), détecteur de copie laissée en français (seule exception : l'endonyme
   `language.fr`), `buildManifest(locale)` (aucune URL préfixée par une langue, tuiles localisées) et
@@ -99,8 +102,12 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   `fr` vs `nl` (le montant suit la langue de l'URL)
 - `tests/pwa/cache-strategies.spec.ts` — stratégies déclaratives + manifest
 - `tests/a11y/axe.spec.ts` — invariants a11y statiques (landmarks, palette)
-- garde-fous hors Jest : `npm run check:hydration` (APIs au render + imbrications HTML) et
-  `npm run check:hydrate` (hydratation réelle via jsdom, option `--skew-intl`)
+- garde-fous hors Jest : `npm run check` = `check:hydration` (APIs au render + imbrications HTML) +
+  `check:copy` (budget de copie française par fichier, zéro dans les coquilles — après une traduction,
+  `npm run check:copy:update` redescend la barre, jamais l'inverse), et `npm run check:hydrate`
+  (hydratation réelle via jsdom, option `--skew-intl`, et `--expect`/`--forbid` pour contrôler le texte
+  hydraté — utile pour le chrome des coquilles, invisible dans le HTML serveur ; toujours avec une route
+  préfixée par la locale, sinon le middleware renvoie sur `/fr/…` et le test échoue pour la mauvaise raison)
 - `frontend/tests/unit/i18n.test.ts` — t('fr', 'hero.title') + fr-BE override
 
 **Commande** : `npm run test:unit` → `jest --testPathPattern='tests/unit|__tests__' --coverage`
