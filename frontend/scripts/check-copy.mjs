@@ -31,7 +31,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const BASELINE = join(ROOT, "scripts", "copy.baseline.json");
 const SCAN_DIRS = ["app", "components", "features"];
-const FLOOR_DIRS = ["components/customer", "components/admin", "components/pwa"];
+const FLOOR_DIRS = ["components/customer", "components/admin", "components/pwa", "components/layout"];
 /**
  * Fichiers passés à zéro, maintenus à zéro (règle dure, pas de budget). La page d'accueil y est
  * depuis que toute sa copie est dans les dictionnaires : son texte est rendu **côté serveur** dans la
@@ -39,7 +39,86 @@ const FLOOR_DIRS = ["components/customer", "components/admin", "components/pwa"]
  * des trois autres langues (index, partages, SEO) — contrairement au reste des pages, invisible
  * jusqu'à l'hydratation.
  */
-const FLOOR_FILES = ["app/[locale]/page.tsx", "app/[locale]/offline/page.tsx", "app/layout.tsx"];
+const FLOOR_FILES = ["app/[locale]/page.tsx", "app/[locale]/offline/page.tsx", "app/layout.tsx", "app/[locale]/layout.tsx"];
+/**
+ * Sous-règle **stricte**, appliquée seulement aux fichiers déjà sous règle dure (`FLOOR_DIRS` +
+ * `FLOOR_FILES`) et aux répertoires listés ici. Le compteur d'accents laisse passer ce qui est français
+ * *sans* accent : « Produits », « 338,84€ / mois », « Admin — décision ». Un chrome promis « à zéro » ne
+ * peut pas se contenter de ça : là, tout nœud texte littéral doit venir d'un dictionnaire.
+ */
+const STRICT_DIRS = ["components/layout", "components/pwa", "components/customer", "components/admin", "components/credit", "components/examples", "components/ui"];
+
+// --- axe strict ------------------------------------------------------------------------------------------------------
+const MOTS_OUTILAGE = /\b(le|la|les|des|du|de|un|une|pour|avec|dans|est|sont|votre|notre|au|aux|ce|cet|cette|ces|mes|ses|requis|requise|voir|cliquer|envoyer|annuler|pr[cé]c[eé]dent|suivant|fermer|ouvrir|modifier|ajouter|supprimer|connecté|d[ée]connexion|hors ligne|disponible|langue|dur[ée]e|montant|frais|taux|pi[èe]ce|justificatif|extrait)\b/i;
+const CODE = /[(){}="`;]|=>|\bfunction\b/;
+/** Marques et sigles que l'on affiche tels quels sur les quatre marchés (aucune traduction possible). */
+const MARQUES_TECHNIQUES = new Set(["kredit", "eidas", "itsme", "febelfin", "swift", "payconiq", "ideal", "secci", "https", "www", "whatsapp"]);
+
+/** Vocabulaire du projet: les mots des valeurs des dictionnaires `fr` — l'oracle « copie d'interface ou pas ». */
+function vocabulaireFrancais() {
+  const mots = new Set();
+  let fichiers = [];
+  try { fichiers = readdirSync(join(ROOT, "i18n", "fr")).filter((x) => x.endsWith(".json")); } catch { return mots; }
+  for (const f of fichiers) {
+    let d;
+    try { d = JSON.parse(readFileSync(join(ROOT, "i18n", "fr", f), "utf8")); } catch { continue; }
+    for (const v of Object.values(d)) {
+      if (typeof v !== "string") continue;
+      for (const w of v.toLowerCase().match(/[a-zà-ÿ]{3,}/g) ?? []) mots.add(w);
+    }
+  }
+  return mots;
+}
+
+/** Retire les blocs de commentaires (machine à états, comme `copie`) : la doc du projet est en français. */
+function sansBlocs(texte) {
+  let dansBloc = false;
+  return texte.split("\n").map((line) => {
+    if (dansBloc) {
+      const fin = line.indexOf("*/");
+      if (fin === -1) return "";
+      dansBloc = false;
+      return line.slice(fin + 2);
+    }
+    let out = "";
+    let reste = line;
+    for (;;) {
+      const debut = reste.indexOf("/*");
+      if (debut === -1) { out += reste; break; }
+      const fin = reste.indexOf("*/", debut + 2);
+      if (fin === -1) { out += reste.slice(0, debut); dansBloc = true; break; }
+      out += reste.slice(0, debut) + " " + reste.slice(fin + 2);
+      reste = reste.slice(fin + 2);
+    }
+    return out;
+  }).join("\n");
+}
+
+function stricte(texte, dictFr) {
+  const out = [];
+  sansBlocs(texte).split("\n").forEach((raw, i) => {
+    const line = clean(raw);
+    if (/check-copy:ignore/.test(line)) return; // cas assumés: wordmark, énumération de langues, noms d'API
+    for (const m of line.matchAll(/>([^<>{}\n]{2,})</g)) {
+      const c = m[1].replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
+      if (!c || CODE.test(c)) continue;                    // du code, pas de la copie
+      // Un mot tout en majuscules est un acronyme technique (FSMA, RGPD, PWA, EUR), une marque ou un code
+      // pays: ce n'est pas de la copie. Idem pour un identifiant (`Intl.DateTimeFormat`, un nom de fichier).
+      if (/^[A-Za-z0-9_.\-]+$/.test(c) && /[._::]/.test(c)) continue;
+      const mots = (c.match(/[A-Za-zà-ÿ]{3,}/g) ?? [])
+        .filter((w) => !/^[A-Z0-9]+$/.test(w))
+        .filter((w) => !MARQUES_TECHNIQUES.has(w.toLowerCase()))
+        .map((w) => w.toLowerCase());
+      if (!mots.length) continue;                          // FSMA, eIDAS, 60 kB, 12m, BE • EUR: technique
+      const francais = ACCENTUE.test(c) || MOTS_OUTILAGE.test(c) || mots.some((w) => dictFr.has(w));
+      if (francais || mots.length >= 2) out.push({ line: i + 1, texte: c.slice(0, 78) });
+    }
+  });
+  return out;
+}
+
+const estStrict = (f) => FLOOR_FILES.includes(f) || STRICT_DIRS.some((d) => f.startsWith(d + "/"));
+const sousRegleDure = (f) => FLOOR_DIRS.some((d) => f.startsWith(d + "/")) || FLOOR_FILES.includes(f);
 
 const ACCENTUE = /[éèêëàâäçîïôöûùüœ]/i;
 const BRUIT = /(className|style=|href=|src=|url\(|\bpx-|\bpy-|\bmt-|\bmb-|rounded|bg-[a-z]|\btext-(xs|sm|base|lg|xl|\[)|grid|flex|w-\d|h-\d|min-|max-|border|shadow|animate|tracking-|leading-|opacity|pointer-events|select-none|place-items|divide-|sticky|inset|z-\d|overflow|hover:|focus:|disabled:|last:|sm:|md:|lg:)/;
@@ -238,6 +317,19 @@ for (const [f, hits] of rel) {
     );
   }
 }
+// Axe strict: uniquement les fichiers sous règle dure. Un texte littéral y est une faute, même sans accent.
+const dictFr = vocabulaireFrancais();
+const strictes = [];
+for (const dir of SCAN_DIRS) {
+  for (const f of fichiers(dir)) {
+    const relNom = relative(ROOT, f).split("\\").join("/");
+    if (!estStrict(relNom) && !sousRegleDure(relNom)) continue;
+    for (const h of stricte(readFileSync(f, "utf8"), dictFr)) {
+      strictes.push(`${relNom}:${h.line}  ${h.texte}`);
+    }
+  }
+}
+
 for (const f of Object.keys(budget)) {
   if (!rel.has(f) && budget[f] > 0) {
     console.log(`ℹ ${f}: la copie française a disparu (${budget[f]} → 0) — penser à ` + `\`node scripts/check-copy.mjs --update\`.`);
@@ -249,6 +341,10 @@ if (erreurs.length) {
   console.error(erreurs.join("\n\n"));
   // Les deux règles partagent la même sortie: n'afficher que la première ferait disparaître la seconde
   // du message, et l'on passerait une correction sous le nez en croyant avoir tout lu.
+  if (strictes.length) {
+    console.error(`\n… et ${strictes.length} texte(s) littéral(aux) dans un fichier sous règle dure:`);
+    console.error(strictes.map((d) => `    ${d}`).join("\n"));
+  }
   if (defs.length) {
     console.error(`\n… et ${defs.length} défaut(s) de prop en français (règle dure, hors budget):`);
     console.error(defs.map((d) => `    ${d}`).join("\n"));
@@ -256,6 +352,12 @@ if (erreurs.length) {
   console.error(`\nLes répertoires ${FLOOR_DIRS.join(", ")} (coquilles vues par les 4 langues) sont à zéro.`);
   console.error("Traduire = ajouter la clé dans les 4 dictionnaires (`i18n/{fr,en,nl,de}/*.json`) puis `t(locale, \"ns:cle\")`.");
   console.error("Après une traduction: `node scripts/check-copy.mjs --update` (le budget ne peut que baisser).\n");
+  process.exit(1);
+}
+if (strictes.length) {
+  console.error(`\n✖ ${strictes.length} texte(s) JSX littéral(aux) dans un fichier promis « zéro copie en dur »:`);
+  console.error(strictes.map((d) => `    ${d}`).join("\n"));
+  console.error("\nDans ces fichiers, tout texte passe par un dictionnaire — `t(locale, \"ns:cle\")`. Un cas assumé (wordmark, énumération de langues, nom d'API) se marque `// check-copy:ignore` sur la ligne, jamais avec un budget.\n");
   process.exit(1);
 }
 if (defs.length) {

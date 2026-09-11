@@ -81,7 +81,7 @@ export default function Page({ params }: { params: { locale: string } }) {
                 </div>
 
                 <div className="mt-5 space-y-3">
-                  <div className="flex justify-between text-sm"><span className="text-slate-500">{tr("heroCard.example")}</span><span className="font-bold text-ink">338,84€ / mois</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-slate-500">{tr("heroCard.example")}</span><span className="font-bold text-ink">338,84€ {tr("simulator.perMonth")}</span></div>
                   <div className="h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full w-[68%] bg-primary rounded-full" /></div>
                   <p className="text-[11px] text-slate-400">{tr("heroCard.note")}</p>
                 </div>
@@ -152,7 +152,7 @@ export default function Page({ params }: { params: { locale: string } }) {
               <div className="mt-2 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-slate-500">KYC/AML</span><span className="font-bold text-emerald-600">{tr("compliance.active")}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">RGPD</span><span className="font-bold text-emerald-600">{tr("compliance.active")}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">Audit</span><span className="font-bold text-emerald-600">{tr("compliance.immutable")}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">{tr("compliance.audit")}</span><span className="font-bold text-emerald-600">{tr("compliance.immutable")}</span></div>
               </div>
             </div>
             <div className="absolute -top-4 -right-4 bg-primary text-white rounded-2xl p-4 shadow-card hidden md:block">

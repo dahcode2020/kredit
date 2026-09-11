@@ -127,7 +127,7 @@ export default function AdminShell({ locale, role, children }: { locale: Locale;
           <div className="bg-ink text-white rounded-none lg:rounded-[20px] overflow-hidden shadow-soft border border-white/10">
             <div className="p-4 border-b border-white/10 flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-primary grid place-items-center font-extrabold">K</div>
-              <div className="min-w-0"><div className="font-extrabold truncate">KREDIT Admin</div><div className="text-xs text-white/60 truncate">{displayEmail} • {displayRole}</div></div>
+              <div className="min-w-0"><div className="font-extrabold truncate">KREDIT Admin{/* check-copy:ignore */}</div><div className="text-xs text-white/60 truncate">{displayEmail} • {displayRole}</div></div>
               <span className="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"/>
             </div>
             <nav className="p-2">

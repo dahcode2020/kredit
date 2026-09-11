@@ -23,8 +23,5 @@
   "app/[locale]/profile/page.tsx": 5,
   "app/[locale]/security/page.tsx": 2,
   "app/[locale]/settings/page.tsx": 4,
-  "app/[locale]/super/page.tsx": 9,
-  "components/credit/Simulator.tsx": 5,
-  "components/examples/I18nShowcase.tsx": 2,
-  "components/layout/Footer.tsx": 3
+  "app/[locale]/super/page.tsx": 9
 }

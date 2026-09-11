@@ -1,8 +1,24 @@
 // Frontend mirror of backend CreditEngine — 100% configurable via same rules (BE defaults)
 import Decimal from "decimal.js";
+// Les listes d'options sont exportées (et pas seulement les unions) : le simulateur construit ses
+// <select> à partir de ces tableaux, donc un nouveau motif d'investissement ou un nouveau statut ne peut
+// plus exister dans le moteur sans être réclamé dans les quatre dictionnaires — `tests/unit/
+// credit-engine-copy.spec.ts` échoue si un code n'a pas sa clé. Une union TypeScript est transparente au
+// runtime : sans ces tableaux, la liste dérivée vivrait en dur dans le composant (et c'est exactement
+// comment « Sans emploi » se retrouvait français sur /nl).
+export const INCOME_TYPES: readonly IncomeType[] = ["SALARY","SELF_EMPLOYED","PENSION","UNEMPLOYMENT","OTHER"];
 export type IncomeType = "SALARY"|"SELF_EMPLOYED"|"PENSION"|"UNEMPLOYMENT"|"OTHER";
+export const EMPLOYMENT_STATUSES: readonly EmploymentStatus[] = ["CDI","CDD","INDEPENDENT","INTERIM","RETIRED","STUDENT","UNEMPLOYED"];
 export type EmploymentStatus = "CDI"|"CDD"|"INDEPENDENT"|"INTERIM"|"RETIRED"|"STUDENT"|"UNEMPLOYED";
+export const LOAN_PURPOSES: readonly LoanPurpose[] = ["VEHICLE","WORKS","CONSUMPTION","DEBT_CONSOLIDATION","MEDICAL","OTHER"];
 export type LoanPurpose = "VEHICLE"|"WORKS"|"CONSUMPTION"|"DEBT_CONSOLIDATION"|"MEDICAL"|"OTHER";
+/** Codes produits, utilisés par les onglets du simulateur (clé i18n = code). */
+export const PRODUCT_TYPES = ["PERSONAL","MORTGAGE","BUSINESS"] as const;
+/** Codes des alertes émises par `simulateCredit` (clé i18n = code). */
+export const SIMULATION_WARNINGS = ["DEBT_RATIO_HIGH","OVER_INDEBTED","LOW_CAPACITY","AT_CEILING"] as const;
+/** Codes des pièces demandées, tous produits confondus (clé i18n = `documents.<code>`). */
+export const DOCUMENT_CODES = ["ID","INCOME_3M","PROOF_ADDRESS","PROPERTY_VALUATION","BANK_STATEMENTS_3M","TAX_RETURN_2Y","BUSINESS_PLAN"] as const;
+
 export interface SimulateInput { amount: number; termMonths: number; monthlyIncome: number; monthlyCharges: number; incomeType: IncomeType; employmentStatus: EmploymentStatus; loanPurpose: LoanPurpose; existingCreditsMonthly?: number; country?: string; productType?: string; birthDate?: string; }
 const rateRules = [
   { id:'rate_BE_PERSONAL_1500_10000', country:'BE', product:'PERSONAL', minAmount:1500, maxAmount:10000, minTerm:12, maxTerm:60, baseRate:0.0499, fees:{filePct:0.01, fileMin:75, fileMax:200}},

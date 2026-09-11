@@ -110,7 +110,7 @@ export default function Header({ locale }: { locale: Locale }) {
                     {locale === l && <Check className="w-4 h-4 shrink-0" />}
                   </button>
                 ))}
-                <div className="mx-3 mt-1.5 pt-1.5 border-t border-white/10 text-[10px] leading-3 text-white/40 text-center">BE • EUR • Europe/Brussels</div>
+                <div className="mx-3 mt-1.5 pt-1.5 border-t border-white/10 text-[10px] leading-3 text-white/40 text-center">BE • EUR • Europe/Brussels{/* check-copy:ignore */}</div>
               </div>
             )}
           </div>
@@ -158,7 +158,7 @@ export default function Header({ locale }: { locale: Locale }) {
           )}
           {/* Langues en liste verticale — économise largeur, plus lisible que pill horizontale */}
           <div>
-            <p className="text-[11px] tracking-widest uppercase font-bold text-white/50 mb-2.5">Langue • Language • Taal • Sprache</p>
+            <p className="text-[11px] tracking-widest uppercase font-bold text-white/50 mb-2.5">Langue • Language • Taal • Sprache{/* check-copy:ignore */}</p>
             <div className="rounded-2xl bg-white/[0.06] border border-white/10 overflow-hidden">
               {locales.map((l) => (
                 <button
@@ -186,12 +186,12 @@ export default function Header({ locale }: { locale: Locale }) {
             <Link href={`/${locale}#about`} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base">{tr("nav.about")}</Link>
             <Link href={`/${locale}#contact`} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base">{tr("nav.contact")}</Link>
             {hasHydrated && isAuthenticated && (
-              <Link href={dashboardHref} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base font-bold text-primary">→ Dashboard</Link>
+              <Link href={dashboardHref} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base font-bold text-primary">{tr("nav.dashboard")} →</Link>
             )}
           </nav>
           <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
             {hasHydrated && isAuthenticated ? (
-              <button onClick={handleLogout} className="h-11 rounded-full bg-white text-ink font-semibold flex items-center justify-center gap-2"><LogOut className="w-4 h-4"/> Déconnexion</button>
+              <button onClick={handleLogout} className="h-11 rounded-full bg-white text-ink font-semibold flex items-center justify-center gap-2"><LogOut className="w-4 h-4"/> {tr("shell.logout")}</button>
             ) : (
               <>
                 <Link href={`/${locale}#auth`} onClick={()=>setOpen(false)} className="h-11 rounded-full bg-white/10 border border-white/15 text-white font-semibold grid place-items-center">{tr("nav.login")}</Link>
