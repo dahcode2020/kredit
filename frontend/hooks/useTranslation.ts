@@ -17,7 +17,9 @@ export function useTranslation(ns: Namespace) {
       else parts.splice(1,0,next);
       router.push(parts.join("/") || `/${next}`);
     }
-    fetch("/api/v1/customers/me/preferences", { method: "PATCH", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ locale: next }) }).catch(()=>{});
+    // Persistance backend seulement si API configurée (évite 404 en dev sans backend)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl) fetch(`${apiUrl}/api/v1/customers/me/preferences`, { method: "PATCH", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ locale: next }) }).catch(()=>{});
   }, [pathname, router]);
   return { t: translate, tRaw: t, locale, setLocale };
 }

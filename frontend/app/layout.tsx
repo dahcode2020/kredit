@@ -3,6 +3,8 @@ export const metadata = {
   title: "KREDIT — Plateforme Européenne de Crédit & Investissement",
   description: "Belgique • EUR • FR/EN/NL/DE • Simulation indicative, décision humaine, audit immuable.",
   manifest: "/manifest.json",
+};
+export const viewport = {
   themeColor: "#0F1115",
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -16,8 +16,8 @@ export default function Header({ locale }: { locale: Locale }) {
     const parts = pathname.split("/");
     parts[1] = l;
     router.push(parts.join("/") || `/${l}`);
-    // persistance backend si authentifié (fire-and-forget)
-    fetch("/api/v1/customers/me/preferences", { method: "PATCH", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ locale: l }) }).catch(()=>{});
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (apiUrl) fetch(`${apiUrl}/api/v1/customers/me/preferences`, { method: "PATCH", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ locale: l }) }).catch(()=>{});
   };
   const tr = (k: string) => t(locale, k);
   return (
