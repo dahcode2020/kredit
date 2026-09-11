@@ -8,6 +8,7 @@ import { Locale } from "@/lib/i18n";
 const nav = [
   { href:'admin/dashboard', label:'Dashboard', icon: LayoutDashboard },
   { href:'admin/customers', label:'Clients', icon: Users },
+  { href:'admin/kyc', label:'KYC', icon: ShieldCheck },
   { href:'admin/credit-applications', label:'Demandes', icon: FolderKanban, badge:'12' },
   { href:'admin/loans', label:'Prêts', icon: Wallet },
   { href:'admin/investments', label:'Investissements', icon: TrendingUp },
