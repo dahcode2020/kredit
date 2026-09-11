@@ -51,7 +51,7 @@ export default function AdminShell({ locale, role, children }: { locale: Locale;
 
   if (!hasHydrated) {
     return (
-      <div suppressHydrationWarning className="min-h-screen bg-surface grid place-items-center py-20">
+      <div className="min-h-screen bg-surface grid place-items-center py-20">
         <div className="bg-white rounded-2xl border p-8 shadow-soft max-w-md w-full mx-4 text-center">
           <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse mx-auto" />
           <div className="h-4 bg-slate-100 animate-pulse rounded mt-4 w-32 mx-auto" />
@@ -63,7 +63,7 @@ export default function AdminShell({ locale, role, children }: { locale: Locale;
 
   if (!isAuthenticated) {
     return (
-      <div suppressHydrationWarning className="min-h-screen bg-surface">
+      <div className="min-h-screen bg-surface">
         <div className="mx-auto max-w-[640px] px-6 py-16">
           <div className="bg-ink text-white rounded-[24px] p-8">
             <div className="w-12 h-12 rounded-xl bg-primary grid place-items-center"><Lock className="w-6 h-6" /></div>
@@ -87,7 +87,7 @@ export default function AdminShell({ locale, role, children }: { locale: Locale;
 
   if (!hasAccess) {
     return (
-      <div suppressHydrationWarning className="min-h-screen bg-surface">
+      <div className="min-h-screen bg-surface">
         <div className="mx-auto max-w-[640px] px-6 py-12">
           <div className="bg-white rounded-2xl border shadow-soft p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 grid place-items-center mx-auto"><AlertTriangle className="w-6 h-6" /></div>
@@ -106,7 +106,7 @@ export default function AdminShell({ locale, role, children }: { locale: Locale;
 
   const displayEmail = user?.email ?? (isSuperActual ? "super@kredit.be" : "admin@kredit.be");
   return (
-    <div suppressHydrationWarning className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface">
       {/* MFA banner */}
       <div className="bg-emerald-600 text-white text-xs font-bold tracking-widest uppercase px-4 py-1.5 flex items-center gap-2 justify-center">
         <Lock className="w-3 h-3"/> MFA TOTP activé • {displayRole} • {isSuperBanner? 'Mode sensible': 'Opérationnel'}

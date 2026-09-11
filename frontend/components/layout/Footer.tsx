@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 
 export default function Footer({ locale }: { locale: Locale }) {
   const tr = (k: string) => t(locale, k);
+  // Année résolue après hydratation: `new Date()` côté serveur (UTC) et navigateur
+  // (Europe/Brussels) peuvent diverger (Nouvel An) → texte différent → mismatch.
+  // null au premier rendu client = rendu identique au serveur, puis mise à jour en effect.
   const [year, setYear] = useState<number | null>(null);
   useEffect(() => setYear(new Date().getFullYear()), []);
   return (
@@ -37,7 +40,7 @@ export default function Footer({ locale }: { locale: Locale }) {
         </div>
         <div className="mt-10 pt-6 border-t border-white/10">
           <p className="text-[11px] leading-5 text-white/45">⚠️ {tr("footer.disclaimer")}</p>
-          <p className="text-[11px] text-white/30 mt-3" suppressHydrationWarning>© {year ?? 2026} KREDIT — Inspiré par Dewi (Themewagon). Design system adapté fintech. PWA installable. Version 1.0 — Belgique.</p>
+          <p className="text-[11px] text-white/30 mt-3">© {year ? `${year} ` : ""}KREDIT — Inspiré par Dewi (Themewagon). Design system adapté fintech. PWA installable. Version 1.0 — Belgique.</p>
         </div>
       </div>
     </footer>

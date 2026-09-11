@@ -11,9 +11,11 @@ export const CACHE_STRATEGIES = {
   PUBLIC_CONTENT: {
     id: 'PUBLIC_CONTENT',
     strategy: 'StaleWhileRevalidate',
-    description: 'Contenu public non sensible (home, simulateur shell, legal) — stale while revalidate, 24h',
-    examples: ['/fr', '/en', '/nl', '/de', '/api/v1/investment-products GET'],
+    description:
+      'Contenu public non sensible — SWR appliqué uniquement aux ressources non-HTML. Les documents (et payloads RSC) ne sont JAMAIS servis depuis un cache tant que le réseau répond: un HTML périmé avec des chunks JS neufs provoque « Hydration failed because the initial UI does not match ».',
+    examples: ['/icons/*', '/*.webp', '/api/v1/investment-products GET'],
     networkTimeoutSeconds: 3,
+    neverCacheHtml: true,
   },
   AUTHENTICATED_CONTENT: {
     id: 'AUTHENTICATED_CONTENT',

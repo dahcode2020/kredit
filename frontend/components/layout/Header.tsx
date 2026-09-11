@@ -58,7 +58,7 @@ export default function Header({ locale }: { locale: Locale }) {
     };
   }, [langOpen]);
   return (
-    <header suppressHydrationWarning className="fixed top-0 inset-x-0 z-50 bg-ink/95 backdrop-blur border-b border-white/5">
+    <header className="fixed top-0 inset-x-0 z-50 bg-ink/95 backdrop-blur border-b border-white/5">
       <div className="mx-auto max-w-[1280px] px-6 h-[72px] flex items-center justify-between">
         <Link href={`/${locale}`} className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-extrabold text-sm">K</div>
@@ -77,7 +77,7 @@ export default function Header({ locale }: { locale: Locale }) {
           <Link href={`/${locale}#contact`} className="nav-link whitespace-nowrap hidden xl:inline">{tr("nav.contact")}</Link>
         </nav>
 
-        <div suppressHydrationWarning className="hidden lg:flex items-center gap-2 xl:gap-3">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3">
           {/* Langues — liste déroulante compacte (économise ~80px vs pill 4 boutons) */}
           <div className="relative" data-lang-dropdown data-testid="lang-dropdown">
             <button

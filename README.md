@@ -151,3 +151,17 @@ kredit/
 ---
 
 **Besoin d'aide?** Voir `docs/architecture.md §8` pour la checklist juridique avant go-live BE.
+
+---
+
+## Hydratation SSR ↔ client
+
+L'app est en App Router (Next 14.2) : tout écart entre le HTML du serveur et le premier rendu
+du client lève `Hydration failed because the initial UI does not match what was rendered on the
+server`, et l'UI « repart à zéro » au refresh.
+
+- Règles et correctifs appliqués : [`docs/hydration.md`](docs/hydration.md)
+- Garde-fou statique (zéro dépendance) : `npm --prefix frontend run check:hydration`
+- Harnais de vérification réel (jsdom, simule le décalage de CLDR serveur/navigateur) :
+  `npm --prefix frontend run check:hydrate -- --skew-intl`
+

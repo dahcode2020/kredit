@@ -2,6 +2,7 @@
 import AdminShell from "@/components/admin/AdminShell";
 import { Locale } from "@/lib/i18n";
 import { useTranslation } from "@/hooks/useTranslation";
+import { formatCurrency, formatDate } from "@/lib/formatters";
 import { useState } from "react";
 import { Mail, MessageSquare, Smartphone, Bell, Search, Eye, Play, Copy, ShieldCheck, Globe } from "lucide-react";
 
@@ -28,12 +29,19 @@ export default function Page({ params }: { params:{locale:string}}) {
   const [filterLocale, setFilterLocale] = useState<string>("ALL");
   const [q, setQ] = useState("");
   const [preview, setPreview] = useState<Template | null>(null);
+  // Horodatage figé à l'ouverture: le rendre avec `new Date()` dans le JSX ferait varier
+  // le texte entre le rendu serveur et le rendu client (mismatch) à chaque re-render.
+  const [previewAt, setPreviewAt] = useState<string>("");
 
   const filtered = mockTemplates.filter(m =>
     (filterChannel==="ALL" || m.channel===filterChannel) &&
     (filterLocale==="ALL" || m.locale===filterLocale) &&
     (q==="" || m.event.toLowerCase().includes(q.toLowerCase()) || m.body.toLowerCase().includes(q.toLowerCase()))
   );
+
+  // Locale de prévisualisation = celle du template, sinon celle de la page (zéro "fr-BE" en dur)
+  const previewLocale: Locale =
+    preview && (["en", "nl", "de"] as string[]).includes(preview.locale) ? (preview.locale as Locale) : locale;
 
   return (
     <AdminShell locale={locale} role="SUPER_ADMIN">
@@ -83,7 +91,7 @@ export default function Page({ params }: { params:{locale:string}}) {
                     <td className="p-3 font-mono text-xs">{m.hsm ?? '—'}</td>
                     <td className="p-3"><span className={`px-2 py-1 rounded-full text-xs font-bold border ${m.status.includes('Approuvé')?'bg-emerald-50 text-emerald-700 border-emerald-200': m.status==='Actif'?'bg-emerald-50 text-emerald-700 border-emerald-200':'bg-amber-50 text-amber-700 border-amber-200'}`}>{m.status}</span></td>
                     <td className="p-3 flex gap-1">
-                      <button onClick={()=>setPreview(m)} className="h-8 px-3 rounded-full border text-xs font-bold flex items-center gap-1"><Eye className="w-3 h-3"/>{t("templates.preview")}</button>
+                      <button onClick={()=>{ setPreview(m); setPreviewAt(new Date().toISOString()); }} className="h-8 px-3 rounded-full border text-xs font-bold flex items-center gap-1"><Eye className="w-3 h-3"/>{t("templates.preview")}</button>
                       <button onClick={()=>alert(`Test ${m.event} ${m.channel} ${m.locale} → queue notifications.send.${m.channel.toLowerCase()} (idempotency_key + retry)`)} className="h-8 px-3 rounded-full bg-ink text-white text-xs font-bold flex items-center gap-1"><Play className="w-3 h-3"/>{t("templates.test")}</button>
                     </td>
                   </tr>
@@ -101,7 +109,7 @@ export default function Page({ params }: { params:{locale:string}}) {
               <div className="bg-surface rounded-xl p-4 space-y-2 text-sm">
                 <div><strong>Sujet:</strong> {preview.subject ?? '—'}</div>
                 <div><strong>Body:</strong> {preview.body}</div>
-                <div className="text-xs text-slate-500" suppressHydrationWarning>Variables: {"{{name}}"} = Alex, {"{{id}}"} = KRD-0842, {"{{amount}}"} = {new Intl.NumberFormat(preview.locale==='en'?'en-BE':'fr-BE',{style:'currency',currency:'EUR'}).format(15000)}, {"{{monthly}}"} = 338,62€, {"{{date}}"} = {new Intl.DateTimeFormat(preview.locale==='en'?'en-BE':'fr-BE').format(new Date())}</div>
+                <div className="text-xs text-slate-500">Variables: {"{{name}}"} = Alex, {"{{id}}"} = KRD-0842, {"{{amount}}"} = {formatCurrency(15000, previewLocale)}, {"{{monthly}}"} = {formatCurrency(338.62, previewLocale)}, {"{{date}}"} = {formatDate(previewAt || new Date(), previewLocale)}</div>
                 <div className="text-xs text-slate-500">HSM: {preview.hsm ?? '—'} • Locale WhatsApp: {preview.locale==='en'?'en_US':preview.locale}</div>
               </div>
               <div className="flex gap-2 justify-end">

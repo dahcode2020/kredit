@@ -1,16 +1,19 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Decimal from "decimal.js";
+import { normalizeIntlSpaces } from "./intl";
 
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
 
 export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
+// Sortie normalisée (lib/intl.ts) : identique côté serveur et côté navigateur, sinon l'espace
+// insécable renvoyé par le CLDR du runtime fait échouer l'hydratation.
 export function formatEUR(amount: number, locale = "fr-BE") {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount);
+  return normalizeIntlSpaces(new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount));
 }
 export function formatEUR2(amount: number, locale = "fr-BE") {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  return normalizeIntlSpaces(new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount));
 }
 
 // French amortization (constant monthly payment) — Decimal.js HALF_UP, pas de float

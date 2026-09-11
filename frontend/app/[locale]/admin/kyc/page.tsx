@@ -2,6 +2,7 @@
 import AdminShell from "@/components/admin/AdminShell";
 import { Locale } from "@/lib/i18n";
 import { useTranslation } from "@/hooks/useTranslation";
+import { formatDateTime } from "@/lib/formatters";
 import { useState } from "react";
 import { ShieldCheck, Check, X, Clock, Eye, AlertTriangle } from "lucide-react";
 
@@ -19,7 +20,7 @@ export default function Page({ params }: { params:{locale:string}}) {
 
   const act = (id: string, decision: 'VERIFIED'|'REJECTED') => {
     if (decision==='REJECTED' && reason.trim().length < 10) return alert("Motif 10+ caractères requis (audit)");
-    setList(prev => prev.map(k => k.id===id ? { ...k, status: decision, verifiedBy:'admin@kredit.be', verifiedAt: new Date().toLocaleString('fr-BE') } as any : k));
+    setList(prev => prev.map(k => k.id===id ? { ...k, status: decision, verifiedBy:'admin@kredit.be', verifiedAt: formatDateTime(new Date(), locale) } as any : k));
     alert(`${decision} ${id} — audit hash-chaîné + ${decision==='VERIFIED' ? 'expires +12m' : 'motif: '+reason}`);
   };
 

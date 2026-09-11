@@ -6,17 +6,16 @@
 // - FINANCIAL_DATA: NetworkOnly (never cache — payments, credit, investments API & docs)
 // Never cache financial/personal sensitive data without encryption — per requirement.
 
-const VERSION = 'kredit-v4';
+const VERSION = 'kredit-v5'; // v5: ne plus jamais mettre de HTML en cache (hydration mismatch après déploiement)
 const STATIC_CACHE = `kredit-static-${VERSION}`;
 const PUBLIC_CACHE = `kredit-public-${VERSION}`;
 const OFFLINE_CACHE = `kredit-offline-${VERSION}`;
 const OFFLINE_URL = '/fr/offline';
+// ⚠️ Jamais de page HTML « vivante » ici (ni '/', '/fr', '/en'…): un document périmé
+// resservi par le SW alors que les chunks JS sont neufs provoque
+// « Hydration failed because the initial UI does not match what was rendered on the server ».
+// Seule la page offline statique est precachée — elle est autonome et hors route métier.
 const PRECACHE_URLS = [
-  '/',
-  '/fr',
-  '/en',
-  '/nl',
-  '/de',
   '/fr/offline',
   '/en/offline',
   '/nl/offline',
@@ -104,36 +103,38 @@ async function staleWhileRevalidate(req, cacheName) {
   const cache = await caches.open(cacheName);
   const cached = await caches.match(req);
   const fetchPromise = fetch(req).then((res) => {
-    if (res && res.ok) cache.put(req, res.clone());
+    // HTML (document ou RSC) jamais SWR: seul le statique (images, fonts, chunks hachés) est revalidé
+    if (res && res.ok && !(res.headers.get('content-type') || '').includes('text/html')) {
+      cache.put(req, res.clone());
+    }
     return res;
   }).catch(() => null);
   return cached || (await fetchPromise) || fetchPromise;
 }
 
+// cacheName est conservé pour la signature des appels; le HTML n'y est jamais écrit.
 async function networkFirst(req, cacheName, timeoutMs = 4000) {
-  const cache = await caches.open(cacheName);
+  const url = new URL(req.url);
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
     const res = await fetch(req, { signal: controller.signal });
     clearTimeout(timeout);
-    if (res && res.ok) {
-      // Do NOT cache sensitive authenticated responses persistently
-      // Only cache shell HTML for offline fallback, not JSON financial data
-      if (req.mode === 'navigate' && res.headers.get('content-type')?.includes('text/html')) {
-        cache.put(req, res.clone());
-      }
-    }
+    // Aucune réponse HTTP n'est archivée ici: le HTML (document ET payload RSC) doit
+    // rester la source de vérité. Le cache de documents est la cause n°1 de mismatches
+    // d'hydratation en production/PWA (vieux HTML ↔ nouveau JS).
     return res;
   } catch (e) {
-    const cached = await caches.match(req);
-    if (cached) return cached;
-    // Fallback to offline page for navigation (locale-aware)
+    // Navigation hors ligne → page offline dédiée (jamais un document mis en cache au vol:
+    // ce serait exactement le HTML périmé qui casse l'hydratation).
     if (req.mode === 'navigate') {
+      const offlineCache = await caches.open(OFFLINE_CACHE);
       const locale = (url.pathname.match(/^\/(fr|en|nl|de)/) || [])[1] || 'fr';
-      const offline = await caches.match(`/${locale}/offline`) || await caches.match(OFFLINE_URL) || await caches.match('/fr');
+      const offline = (await offlineCache.match(`/${locale}/offline`)) || (await offlineCache.match(OFFLINE_URL));
       if (offline) return offline;
     }
+    const cached = await caches.match(req);
+    if (cached) return cached;
     // For API, return structured offline response
     if (req.url.includes('/api/')) {
       return new Response(JSON.stringify({ statusCode: 503, code: 'OFFLINE', message: 'Connexion requise — opération nécessite le serveur. Données financières non mises en cache par sécurité.' }), {
@@ -150,8 +151,10 @@ async function networkOnly(req) {
     return await fetch(req);
   } catch (e) {
     if (req.mode === 'navigate') {
+      const url = new URL(req.url);
+      const offlineCache = await caches.open(OFFLINE_CACHE);
       const locale = (url.pathname.match(/^\/(fr|en|nl|de)/) || [])[1] || 'fr';
-      const offline = await caches.match(`/${locale}/offline`) || await caches.match(OFFLINE_URL);
+      const offline = (await offlineCache.match(`/${locale}/offline`)) || (await offlineCache.match(OFFLINE_URL));
       if (offline) return offline;
       return new Response('<h1>Hors ligne</h1><p>Connexion requise. Les opérations financières nécessitent le serveur.</p>', { headers: { 'Content-Type': 'text/html' }, status: 503 });
     }
@@ -204,6 +207,12 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
+  // Payloads RSC (navigations client-side Next) : cohérence stricte avec le document → réseau, jamais de cache.
+  if (url.searchParams.has('_rsc') || req.headers.get('RSC') === '1') {
+    event.respondWith(networkOnly(req));
+    return;
+  }
+
   // Only handle GET for caching; other methods always networkOnly
   if (req.method !== 'GET') {
     // Financial mutations must always hit server
@@ -229,13 +238,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // STATIC_ASSETS — CacheFirst
+  // STATIC_ASSETS — CacheFirst (uniquement des URLs hachées/immuables)
   if (isStaticAsset(req)) {
     event.respondWith(
       (async () => {
         // Try preload response first
         const preload = await event.preloadResponse;
-        if (preload) {
+        if (preload && preload.ok && !(preload.headers.get('content-type') || '').includes('text/html')) {
           const cache = await caches.open(STATIC_CACHE);
           cache.put(req, preload.clone());
           return preload;
@@ -252,18 +261,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // PUBLIC_CONTENT — StaleWhileRevalidate or NetworkFirst for navigations
+  // PUBLIC_CONTENT — navigation: toujours le réseau (document frais), fallback = page offline
   if (isPublicContent(req)) {
     if (req.mode === 'navigate') {
       event.respondWith(
         (async () => {
           const preload = await event.preloadResponse;
-          if (preload) {
+          if (preload && !(preload.headers.get('content-type') || '').includes('text/html')) {
             const cache = await caches.open(PUBLIC_CACHE);
             cache.put(req, preload.clone());
             return preload;
           }
-          // Network first for HTML to get fresh content, fallback to cache
+          // Le document HTML n'est jamais servi depuis un cache quand le réseau répond.
           return networkFirst(req, PUBLIC_CACHE, 4000);
         })()
       );

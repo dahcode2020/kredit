@@ -5,6 +5,7 @@ import { mockAdminApps } from "@/lib/mockAdmin";
 import { useState, useEffect } from "react";
 import { ShieldCheck, AlertTriangle, FileText, Clock, Check, X, Eye } from "lucide-react";
 import { formatEUR2 } from "@/lib/utils";
+import { formatDateTime, localeToIntl } from "@/lib/formatters";
 export default function Page({ params }: { params:{locale:string, id:string}}) {
   const locale = params.locale as Locale;
   const app = mockAdminApps.find(a=>a.id===params.id) || mockAdminApps[0];
@@ -14,9 +15,9 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
   const [decided, setDecided] = useState<string | null>(null);
   const [decidedAt, setDecidedAt] = useState<string>("");
   useEffect(() => {
-    if (decided) setDecidedAt(new Date().toLocaleString('fr-BE'));
+    if (decided) setDecidedAt(formatDateTime(new Date(), locale));
   }, [decided]);
-  const eur = (v:number)=> formatEUR2(v, "fr-BE");
+  const eur = (v: number) => formatEUR2(v, localeToIntl[locale]);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="max-w-[1100px] space-y-6">
@@ -87,7 +88,7 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
               {decided ? (
                 <div className="mt-3 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-sm">
                   <div className="font-bold text-emerald-800">Décision: {decided}</div>
-                  <div className="text-xs text-slate-600" suppressHydrationWarning>Enregistré: admin@kredit.be • {decidedAt || "—"} • Règles: max_debt_ratio 38.4%→33% • Motif: {exception||reason||'—'} • hash a3f9…</div>
+                  <div className="text-xs text-slate-600">Enregistré: admin@kredit.be • {decidedAt || "—"} • Règles: max_debt_ratio 38.4%→33% • Motif: {exception||reason||'—'} • hash a3f9…</div>
                   <div className="text-xs text-slate-500">audit_logs + history + event application.decided</div>
                 </div>
               ) : (

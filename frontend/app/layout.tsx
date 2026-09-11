@@ -62,6 +62,9 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
+    // lang est un point de départ (fr) : le layout racine ne reçoit pas les params du
+    // segment [locale], donc HtmlLang (layout enfant) applique la vraie langue après hydratation.
+    // suppressHydrationWarning est légitime ICI uniquement (attribut muté hors React).
     <html lang="fr" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -71,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body className="bg-white text-ink antialiased font-body" suppressHydrationWarning>
+      <body className="bg-white text-ink antialiased font-body">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-ink text-white px-4 py-2 rounded-full z-[100]">Aller au contenu</a>
         {children}
         <SWRegister />

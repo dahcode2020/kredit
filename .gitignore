@@ -33,3 +33,6 @@ pgdata
 
 # cache
 .cache
+
+# ts build info
+*.tsbuildinfo

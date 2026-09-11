@@ -159,6 +159,9 @@ function interpolate(template: string, vars?: Record<string, any>, locale: Local
 
 export const localeToIntl: Record<Locale, string> = { fr:"fr-BE", en:"en-BE", nl:"nl-BE", de:"de-BE" };
 
+// Direction par locale — à compléter si une locale RTL (ar, he…) est ajoutée.
+export const localeDir: Record<Locale, "ltr" | "rtl"> = { fr:"ltr", en:"ltr", nl:"ltr", de:"ltr" };
+
 // t with namespace:key + vars + locale
 export function t(locale: Locale, key: string, vars?: Record<string, any>): string {
   // Support both "ns:key" and bare "key" (legacy). If no colon, try common:key, then bare.
@@ -234,20 +237,29 @@ export const STORAGE_KEY = "kredit-locale";
 export const COOKIE_NAME = "NEXT_LOCALE";
 export const COOKIE_MAX_AGE = 31536000; // 1y
 
+// ⚠️ À appeler uniquement dans un effect / un handler (jamais pendant un render):
+// ces API sont absentes du serveur et peuvent lever (Safari privé, cookies désactivés).
 export function getPersistedLocale(): Locale | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored && (locales as readonly string[]).includes(stored)) return stored as Locale;
-  const match = document.cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
-  if (match && (locales as readonly string[]).includes(match[1])) return match[1] as Locale;
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored && (locales as readonly string[]).includes(stored)) return stored as Locale;
+  } catch {} // Storage access refused (private mode / bloque)
+  try {
+    const match = document.cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+    if (match && (locales as readonly string[]).includes(match[1])) return match[1] as Locale;
+  } catch {}
   return null;
 }
 
 export function setPersistedLocale(locale: Locale) {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, locale);
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, locale);
+  } catch {}
+  try {
     document.cookie = `${COOKIE_NAME}=${locale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
-  }
+  } catch {}
   // also PATCH /api/v1/customers/me {locale} if authenticated — caller handles
 }
 

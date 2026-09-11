@@ -215,3 +215,33 @@ curl -I http://localhost:3000/manifest.json
 # Update: modifier sw VERSION → reload → toast Mise à jour
 # Push: DevTools > Push → tester push event
 ```
+
+---
+
+## 14. Règle anti-hydratation — le HTML ne se met jamais en cache
+
+Un document HTML resservi par le service worker alors que les chunks JS (`/_next/static/*`)
+sont déjà ceux de la nouvelle version produit invariablement :
+
+```
+Error: Hydration failed because the initial UI does not match what was rendered on the server.
+```
+
+Le DOM parsé ne correspond plus à l'arbre que le bundle client veut hydrater ; React jette
+l'arbre, tout clignote et « Actualiser » semble ne rien corriger (le cache est toujours là).
+
+Contraintes appliquées dans `frontend/public/sw.js` :
+
+1. `PRECACHE_URLS` = page `/{locale}/offline`, `manifest.json`, icônes. **Jamais `/`, `/fr`,
+   `/en`, `/nl`, `/de`** ni une page métier.
+2. Navigations (documents) et payloads RSC (`?_rsc=`, en-tête `RSC: 1`) : `NetworkOnly` /
+   `NetworkFirst` **sans écriture en cache**. Le fallback hors ligne est la page `/offline`
+   (lue depuis `OFFLINE_CACHE`), jamais un document mis en cache au vol.
+3. `StaleWhileRevalidate` réservé aux ressources non-HTML (garde sur `content-type`).
+4. Toute modification du rendu embarque un bump de `VERSION` : `activate` purge les caches des
+   versions précédentes (les visiteurs d'avant gardent sinon un cache empoisonné).
+5. Le fallback hors ligne doit rester exécutable : `networkFirst`/`networkOnly` utilisent leur
+   propre `new URL(req.url)` (un `url` hérité du scope `fetch` levait une `ReferenceError`).
+
+Ce fichier est vérifié hors CI par `npm --prefix frontend run check:hydration`, qui interdit
+les documents HTML dans `PRECACHE_URLS`. Voir aussi `docs/hydration.md`.

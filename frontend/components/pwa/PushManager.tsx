@@ -3,10 +3,34 @@ import { Bell, BellOff, Loader2 } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { Button } from "@/components/ui/Button";
 
+/**
+ * Notifications push.
+ *
+ * Le support push est détecté APRÈS hydratation (voir usePushNotifications): rendre une
+ * branche différente selon `typeof window` produisait un arbre client ≠ HTML serveur
+ * (hydration mismatch). La condition d'origine était en plus fausse:
+ * `!('Notification' in window) && !('PushManager' in window)` ne se déclenchait jamais
+ * sur Safari/Android où une seule des deux API manque.
+ */
 export default function PushManager({ compact = false }: { compact?: boolean }) {
-  const { permission, subscribed, loading, subscribe, unsubscribe } = usePushNotifications();
+  const { permission, support, subscribed, loading, subscribe, unsubscribe } = usePushNotifications();
+  const known = support !== "checking";
 
-  if (typeof window !== 'undefined' && !('Notification' in window) && !('PushManager' in window)) {
+  if (!known) {
+    // Placeholder identique au HTML serveur: aucun contenu « navigateur-dépendant » au premier rendu
+    return compact ? (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border border-slate-200 bg-white text-slate-400">
+        <Bell className="w-3 h-3" /> <span className="sr-only">Détection du support push…</span>
+      </span>
+    ) : (
+      <div className="rounded-2xl border p-4 bg-white">
+        <div className="flex items-center gap-2 font-bold text-ink"><Bell className="w-4 h-4 text-primary" /> Notifications push</div>
+        <p className="text-sm text-slate-500 mt-1">Recevez les mises à jour de dossier, échéances et alertes sécurité — même quand l’app est fermée.</p>
+      </div>
+    );
+  }
+
+  if (support === "unsupported") {
     return <div className="text-xs text-slate-400">Notifications push non supportées sur cet appareil.</div>;
   }
 
