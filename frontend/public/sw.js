@@ -6,7 +6,7 @@
 // - FINANCIAL_DATA: NetworkOnly (never cache — payments, credit, investments API & docs)
 // Never cache financial/personal sensitive data without encryption — per requirement.
 
-const VERSION = 'kredit-v2';
+const VERSION = 'kredit-v3';
 const STATIC_CACHE = `kredit-static-${VERSION}`;
 const PUBLIC_CACHE = `kredit-public-${VERSION}`;
 const OFFLINE_CACHE = `kredit-offline-${VERSION}`;
@@ -178,8 +178,8 @@ self.addEventListener('install', (event) => {
           try { await cache.add(u); } catch (_) {}
         }
       }
-      // Also warm static cache with current sw
-      await self.skipWaiting();
+      // Do NOT auto skipWaiting — let the UI prompt user to apply update
+      // (prevents "Actualiser" loop on every refresh; update remains in waiting until user clicks)
     })()
   );
 });

@@ -1,9 +1,11 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { LayoutDashboard, FileText, Calculator, Wallet, TrendingUp, CreditCard, FolderKanban, Bell, Settings, User, Shield, LogOut, Menu, X, Home } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { LayoutDashboard, FileText, Calculator, Wallet, TrendingUp, CreditCard, FolderKanban, Bell, Settings, User, Shield, LogOut, Menu, X, Home, Lock } from "lucide-react";
 import { useState } from "react";
 import { Locale } from "@/lib/i18n";
+import { useAuth, useAuthHydrated } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/Button";
 
 const nav = [
   { href:'dashboard', label:'Dashboard', icon: LayoutDashboard },
@@ -20,10 +22,78 @@ const nav = [
   { href:'settings', label:'Réglages', icon: Settings },
 ];
 
+function demoLoginAsCustomer(locale: Locale, login: any) {
+  const user = { id: "cust-demo-1", email: "alex@kredit.be", role: "CUSTOMER" as const, locale, firstName: "Alex", lastName: "Martin" };
+  const at = "demo-at-" + Math.random().toString(36).slice(2);
+  const rt = "demo-rt-" + Math.random().toString(36).slice(2);
+  login(user, at, rt);
+}
+
 export default function CustomerShell({ locale, children }: { locale: Locale; children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const base = `/${locale}`;
+  const { hasHydrated, isAuthenticated, user } = useAuthHydrated();
+  const login = useAuth((s) => s.login);
+  const logout = useAuth((s) => s.logout);
+
+  const handleLogout = () => {
+    logout();
+    setOpen(false);
+    router.push(`/${locale}`);
+  };
+  const handleDemoLogin = () => {
+    demoLoginAsCustomer(locale, login);
+  };
+
+  // Loading skeleton while hydrating persist (évite flash "non connecté" au refresh)
+  if (!hasHydrated) {
+    return (
+      <div className="min-h-screen bg-surface grid place-items-center py-20">
+        <div className="bg-white rounded-2xl border p-8 shadow-soft max-w-md w-full mx-4 text-center">
+          <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse mx-auto" />
+          <div className="h-4 bg-slate-100 animate-pulse rounded mt-4 w-32 mx-auto" />
+          <div className="h-3 bg-slate-100 animate-pulse rounded mt-2 w-48 mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  // Non connecté — invite démo (persist corrigée, ne perd plus au refresh)
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <div className="mx-auto max-w-[640px] px-6 py-16">
+          <div className="bg-white rounded-[24px] border shadow-soft p-8 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 grid place-items-center mx-auto"><Lock className="w-7 h-7" /></div>
+            <h1 className="mt-4 text-xl font-extrabold text-ink">Espace client — connexion requise</h1>
+            <p className="text-sm text-slate-500 mt-2">Vous n’êtes pas connecté. La persistance a été corrigée : votre session survit au refresh (localStorage <code className="bg-slate-100 px-1 rounded">kredit-auth</code>).</p>
+            <p className="text-xs text-slate-400 mt-2">Mode démo local — aucun backend requis. Cliquez pour vous connecter en tant que CUSTOMER.</p>
+            <div className="mt-6 flex flex-col gap-3">
+              <Button onClick={handleDemoLogin} className="w-full justify-center">Se connecter en démo (alex@kredit.be)</Button>
+              <Link href={`/${locale}#auth`} className="text-sm font-semibold text-primary text-center">Retour à l’accueil — choisir un rôle</Link>
+              <Link href={`${base}/dashboard`} onClick={handleDemoLogin} className="text-xs text-slate-500 underline text-center">Ou continuer en lecture seule (maquette)</Link>
+            </div>
+            <div className="mt-6 bg-slate-50 rounded-xl p-3 text-left">
+              <div className="text-xs font-bold text-ink">Astuce debug</div>
+              <div className="text-xs text-slate-600 mt-1">Après connexion, rafraîchissez la page (F5) : vous restez connecté. Le header affiche votre email et le point SYNCING/ONLINE.</div>
+            </div>
+          </div>
+          {/* Still render children in read-only muted */}
+          <div className="mt-8 opacity-60 pointer-events-none select-none">
+            <div className="text-xs tracking-widest uppercase font-bold text-slate-400 text-center mb-2">Aperçu maquette (lecture seule)</div>
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const displayName = user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.email?.split("@")[0] ?? "Alex Martin";
+  const displayEmail = user?.email ?? "alex@kredit.be";
+  const avatarImg = user?.email?.includes("alex") ? "https://i.pravatar.cc/100?img=12" : `https://i.pravatar.cc/100?u=${encodeURIComponent(displayEmail)}`;
+
   return (
     <div className="min-h-screen bg-surface">
       {/* mobile header */}
@@ -37,12 +107,12 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
         <aside className={`${open? 'block':'hidden'} lg:block w-full lg:w-[260px] shrink-0 lg:sticky lg:top-[88px] h-fit`}>
           <div className="bg-white rounded-none lg:rounded-[20px] border lg:sticky lg:top-[88px] overflow-hidden shadow-soft">
             <div className="p-4 border-b flex items-center gap-3">
-              <img src="https://i.pravatar.cc/100?img=12" alt="" className="w-10 h-10 rounded-full"/>
-              <div><div className="text-sm font-bold text-ink">Alex Martin</div><div className="text-xs text-slate-500">alex@kredit.be • BE</div></div>
-              <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="KYC vérifié"/>
+              <img src={avatarImg} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <div className="min-w-0"><div className="text-sm font-bold text-ink truncate">{displayName}</div><div className="text-xs text-slate-500 truncate">{displayEmail} • BE</div></div>
+              <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="KYC vérifié — connecté" />
             </div>
             <nav className="p-2">
-              {nav.map(item=>{
+              {nav.map((item: any)=>{
                 const active = pathname.endsWith(`/${item.href}`) || pathname.includes(`/${item.href}/`);
                 return (
                   <Link key={item.href} href={`${base}/${item.href}`} onClick={()=>setOpen(false)}
@@ -59,7 +129,7 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
                 <div className="text-xs text-slate-600">Un ADMIN humain répond &lt;24h</div>
                 <Link href={`${base}/#contact`} className="mt-2 inline-flex h-8 px-3 rounded-full bg-ink text-white text-xs font-bold items-center">Contacter</Link>
               </div>
-              <button className="mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:bg-surface"><LogOut className="w-4 h-4"/> Déconnexion</button>
+              <button onClick={handleLogout} className="mt-3 w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:bg-surface"><LogOut className="w-4 h-4"/> Déconnexion</button>
             </div>
           </div>
         </aside>

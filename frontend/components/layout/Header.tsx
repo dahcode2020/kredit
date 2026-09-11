@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Globe, Shield, ChevronDown, Check } from "lucide-react";
+import { Menu, X, Globe, Shield, ChevronDown, Check, LogOut, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Locale, locales, t, setPersistedLocale } from "@/lib/i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ConnectivityDot } from "@/components/pwa/ConnectivityStatus";
+import { useAuth, useAuthHydrated } from "@/hooks/useAuth";
 
 const localeLabels: Record<Locale, string> = {
   fr: "Français",
@@ -20,6 +21,8 @@ export default function Header({ locale }: { locale: Locale }) {
   const [langOpen, setLangOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { hasHydrated, isAuthenticated, user } = useAuthHydrated();
+  const logout = useAuth((s) => s.logout);
   const switchLocale = (l: Locale) => {
     setPersistedLocale(l);
     const parts = pathname.split("/");
@@ -29,6 +32,16 @@ export default function Header({ locale }: { locale: Locale }) {
     if (apiUrl) fetch(`${apiUrl}/api/v1/customers/me/preferences`, { method: "PATCH", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ locale: l }) }).catch(()=>{});
   };
   const tr = (k: string) => t(locale, k);
+  const handleLogout = () => {
+    logout();
+    setOpen(false);
+    router.push(`/${locale}`);
+  };
+  const dashboardHref = (() => {
+    if (!user) return `/${locale}/dashboard`;
+    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") return `/${locale}/admin/dashboard`;
+    return `/${locale}/dashboard`;
+  })();
 
   useEffect(() => {
     if (!langOpen) return;
@@ -108,8 +121,28 @@ export default function Header({ locale }: { locale: Locale }) {
               </div>
             )}
           </div>
-          <Link href={`/${locale}#auth`} className="text-white/90 hover:text-white text-[13px] font-semibold whitespace-nowrap hidden xl:inline"> {tr("nav.login")} </Link>
-          <Link href={`/${locale}#simulateur`} className="shrink-0"><Button size="md" className="!h-9 !px-5 !text-[13px] whitespace-nowrap">{tr("nav.cta")}</Button></Link>
+          {/* Auth area — hydratation-aware */}
+          {!hasHydrated ? (
+            <span className="w-24 h-8 rounded-full bg-white/5 animate-pulse hidden xl:inline-block" />
+          ) : isAuthenticated && user ? (
+            <>
+              <Link href={dashboardHref} className="hidden xl:inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/10 border border-white/10 text-white text-[12px] font-semibold hover:bg-white/15">
+                <LayoutDashboard className="w-3.5 h-3.5" /> Dashboard
+              </Link>
+              <div className="flex items-center gap-2 pl-3 pr-1 h-8 rounded-full bg-white border border-slate-200">
+                <span className="hidden xl:inline text-[12px] font-bold text-ink max-w-[140px] truncate" title={user.email}>{user.email}</span>
+                <span className="hidden xl:inline px-1.5 py-0.5 rounded-full bg-ink text-white text-[10px] font-bold tracking-widest uppercase">{user.role === "SUPER_ADMIN" ? "SUPER" : user.role}</span>
+                <button onClick={handleLogout} aria-label="Déconnexion" className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 grid place-items-center text-slate-600">
+                  <LogOut className="w-3 h-3" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link href={`/${locale}#auth`} className="text-white/90 hover:text-white text-[13px] font-semibold whitespace-nowrap hidden xl:inline"> {tr("nav.login")} </Link>
+              <Link href={`/${locale}#simulateur`} className="shrink-0"><Button size="md" className="!h-9 !px-5 !text-[13px] whitespace-nowrap">{tr("nav.cta")}</Button></Link>
+            </>
+          )}
         </div>
 
         <button onClick={() => setOpen(!open)} className="lg:hidden w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white border border-white/10">
@@ -119,6 +152,17 @@ export default function Header({ locale }: { locale: Locale }) {
 
       {open && (
         <div className="lg:hidden bg-ink border-t border-white/10 px-6 py-6 space-y-5">
+          {/* User pill mobile when authenticated */}
+          {hasHydrated && isAuthenticated && user && (
+            <div className="rounded-2xl bg-white p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-ink text-white grid place-items-center font-bold">{user.email[0]?.toUpperCase()}</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-ink truncate">{user.email}</div>
+                <div className="text-xs text-slate-500">{user.role} • {locale.toUpperCase()} • BE</div>
+              </div>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            </div>
+          )}
           {/* Langues en liste verticale — économise largeur, plus lisible que pill horizontale */}
           <div>
             <p className="text-[11px] tracking-widest uppercase font-bold text-white/50 mb-2.5">Langue • Language • Taal • Sprache</p>
@@ -148,10 +192,19 @@ export default function Header({ locale }: { locale: Locale }) {
             <Link href={`/${locale}#services`} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base">{tr("nav.invest")}</Link>
             <Link href={`/${locale}#about`} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base">{tr("nav.about")}</Link>
             <Link href={`/${locale}#contact`} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base">{tr("nav.contact")}</Link>
+            {hasHydrated && isAuthenticated && (
+              <Link href={dashboardHref} onClick={()=>setOpen(false)} className="block nav-link py-2.5 text-base font-bold text-primary">→ Dashboard</Link>
+            )}
           </nav>
           <div className="flex flex-col gap-2 pt-2 border-t border-white/10">
-            <Link href={`/${locale}#auth`} onClick={()=>setOpen(false)} className="h-11 rounded-full bg-white/10 border border-white/15 text-white font-semibold grid place-items-center">{tr("nav.login")}</Link>
-            <Link href={`/${locale}#simulateur`} onClick={()=>setOpen(false)}><Button className="w-full !h-11">{tr("nav.cta")}</Button></Link>
+            {hasHydrated && isAuthenticated ? (
+              <button onClick={handleLogout} className="h-11 rounded-full bg-white text-ink font-semibold flex items-center justify-center gap-2"><LogOut className="w-4 h-4"/> Déconnexion</button>
+            ) : (
+              <>
+                <Link href={`/${locale}#auth`} onClick={()=>setOpen(false)} className="h-11 rounded-full bg-white/10 border border-white/15 text-white font-semibold grid place-items-center">{tr("nav.login")}</Link>
+                <Link href={`/${locale}#simulateur`} onClick={()=>setOpen(false)}><Button className="w-full !h-11">{tr("nav.cta")}</Button></Link>
+              </>
+            )}
           </div>
         </div>
       )}

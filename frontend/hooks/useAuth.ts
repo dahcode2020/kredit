@@ -1,9 +1,89 @@
 "use client";
 import { create } from "zustand";
-type User = { id: string; email: string; role: "CUSTOMER"|"ADMIN"|"SUPER_ADMIN"; locale: string };
-type AuthState = { user: User|null; accessToken: string|null; login:(u:User,t:string)=>void; logout:()=>void };
-export const useAuth = create<AuthState>((set)=>({
-  user:null, accessToken:null,
-  login:(user, accessToken)=> set({user, accessToken}),
-  logout:()=> set({user:null, accessToken:null}),
-}));
+import { persist, createJSONStorage } from "zustand/middleware";
+
+type User = { id: string; email: string; role: "CUSTOMER" | "ADMIN" | "SUPER_ADMIN"; locale: string; firstName?: string; lastName?: string };
+type AuthState = {
+  user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  _hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
+  login: (u: User, accessToken: string, refreshToken?: string | null) => void;
+  logout: () => void;
+  setUser: (u: Partial<User>) => void;
+};
+
+export const useAuth = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      _hasHydrated: false,
+      setHasHydrated: (v) => set({ _hasHydrated: v }),
+      login: (user, accessToken, refreshToken = null) => {
+        // compat: also keep legacy keys for api.client
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.setItem("accessToken", accessToken);
+            if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
+            localStorage.setItem("user", JSON.stringify(user));
+          }
+        } catch {}
+        set({ user, accessToken, refreshToken });
+      },
+      logout: () => {
+        try {
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("accessToken");
+            localStorage.removeItem("refreshToken");
+            localStorage.removeItem("user");
+          }
+        } catch {}
+        set({ user: null, accessToken: null, refreshToken: null });
+      },
+      setUser: (patch) => {
+        const cur = get().user;
+        if (!cur) return;
+        const next = { ...cur, ...patch };
+        try {
+          if (typeof window !== "undefined") localStorage.setItem("user", JSON.stringify(next));
+        } catch {}
+        set({ user: next });
+      },
+    }),
+    {
+      name: "kredit-auth",
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined") return localStorage;
+        // SSR fallback: memory no-op
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        } as any;
+      }),
+      partialize: (state) => ({ user: state.user, accessToken: state.accessToken, refreshToken: state.refreshToken }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+        // sync legacy keys for api.client that reads localStorage directly
+        try {
+          if (typeof window !== "undefined" && state?.accessToken) {
+            localStorage.setItem("accessToken", state.accessToken);
+            if (state.refreshToken) localStorage.setItem("refreshToken", state.refreshToken);
+            if (state.user) localStorage.setItem("user", JSON.stringify(state.user));
+          }
+        } catch {}
+      },
+    }
+  )
+);
+
+// Helper for components that need to wait hydration before deciding auth
+export function useAuthHydrated() {
+  const hasHydrated = useAuth((s) => s._hasHydrated);
+  const user = useAuth((s) => s.user);
+  const token = useAuth((s) => s.accessToken);
+  return { hasHydrated, isAuthenticated: !!user && !!token, user, token };
+}

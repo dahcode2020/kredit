@@ -1,15 +1,33 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge, Button } from "@/components/ui/Button";
 import Simulator from "@/components/credit/Simulator";
 import { Locale, t } from "@/lib/i18n";
+import { useAuth, useAuthHydrated } from "@/hooks/useAuth";
 import { Check, Shield, Lock, FileCheck, Clock, Users, TrendingUp, Star, Play, ArrowRight, Award, Building2, Wallet, Home, Briefcase, BarChart3, Fingerprint, Scale, Bell, MessageCircle, Mail, Phone, MapPin, Quote, ChevronDown, Calculator, Info } from "lucide-react";
 
 export default function Page({ params }: { params: { locale: string } }) {
   const locale = params.locale as Locale;
   const tr = (k: string) => t(locale, k);
   const [activeTab, setActiveTab] = useState(0);
+  const router = useRouter();
+  const login = useAuth((s) => s.login);
+  const { isAuthenticated, user } = useAuthHydrated();
+  const handleDemoLogin = (role: "CUSTOMER"|"ADMIN"|"SUPER_ADMIN") => {
+    const map: Record<string, { email: string; firstName: string; href: string }> = {
+      CUSTOMER: { email: "alex@kredit.be", firstName: "Alex", href: `/${locale}/dashboard` },
+      ADMIN: { email: "admin@kredit.be", firstName: "Admin", href: `/${locale}/admin/dashboard` },
+      SUPER_ADMIN: { email: "super@kredit.be", firstName: "Super", href: `/${locale}/admin/dashboard` },
+    };
+    const cfg = map[role];
+    const u = { id: `demo-${role.toLowerCase()}`, email: cfg.email, role, locale, firstName: cfg.firstName, lastName: "Kredit" };
+    const at = "demo-at-" + Math.random().toString(36).slice(2) + "-" + Date.now();
+    const rt = "demo-rt-" + Math.random().toString(36).slice(2);
+    login(u as any, at, rt);
+    router.push(cfg.href);
+  };
 
   return (
     <div className="bg-white">
@@ -295,19 +313,26 @@ export default function Page({ params }: { params: { locale: string } }) {
 
         <div className="mt-8 grid md:grid-cols-3 gap-6">
           {[
-            { role: tr("roles.customer"), icon: Users, color: "bg-emerald-500", items: ["Créer & suivre ses demandes", "KYC & documents", "Échéancier & paiements SEPA", "Notifications préférences"], cta: "Espace Customer" },
-            { role: tr("roles.admin"), icon: Shield, color: "bg-ink", items: ["Gestion clients & dossiers", "Analyse scoring & documents", "Décision finale (humaine)", "Stats & notifications"], cta: "Espace Admin" },
-            { role: tr("roles.super"), icon: Award, color: "bg-primary", items: ["Tout ADMIN +", "Config pays/produits/taux/règles", "Intégrations & feature flags", "Logs & audits sensibles"], cta: "Espace Super Admin" },
-          ].map(card => (
+            { key:"CUSTOMER" as const, role: tr("roles.customer"), icon: Users, color: "bg-emerald-500", items: ["Créer & suivre ses demandes", "KYC & documents", "Échéancier & paiements SEPA", "Notifications préférences"], cta: "Espace Customer", href: `/${locale}/dashboard` },
+            { key:"ADMIN" as const, role: tr("roles.admin"), icon: Shield, color: "bg-ink", items: ["Gestion clients & dossiers", "Analyse scoring & documents", "Décision finale (humaine)", "Stats & notifications"], cta: "Espace Admin", href: `/${locale}/admin/dashboard` },
+            { key:"SUPER_ADMIN" as const, role: tr("roles.super"), icon: Award, color: "bg-primary", items: ["Tout ADMIN +", "Config pays/produits/taux/règles", "Intégrations & feature flags", "Logs & audits sensibles"], cta: "Espace Super Admin", href: `/${locale}/admin/dashboard` },
+          ].map(card => {
+            const already = isAuthenticated && user?.role === card.key;
+            return (
             <div key={card.role} className="bg-white rounded-[24px] border shadow-soft p-6">
               <div className={`w-12 h-12 rounded-xl ${card.color} text-white grid place-items-center`}><card.icon className="w-6 h-6"/></div>
               <div className="mt-3 text-xs tracking-widest uppercase font-bold text-slate-500">{card.role}</div>
               <ul className="mt-3 space-y-2 text-sm text-slate-600">
                 {card.items.map(i=> <li key={i} className="flex gap-2"><Check className="w-4 h-4 text-emerald-500 mt-0.5"/>{i}</li>)}
               </ul>
-              <button onClick={()=> alert(`Démo ${card.role}: connectez-vous via l'API /auth/login (JWT + refresh). Ici, maquette front sans backend live.`)} className="mt-5 w-full h-11 rounded-full bg-white border border-slate-200 font-bold text-sm hover:bg-surface flex items-center justify-center gap-2">{card.cta} <ArrowRight className="w-4 h-4"/></button>
+              {already ? (
+                <Link href={card.href} className="mt-5 w-full h-11 rounded-full bg-emerald-600 text-white border border-emerald-600 font-bold text-sm hover:bg-emerald-700 flex items-center justify-center gap-2">Aller au dashboard <ArrowRight className="w-4 h-4"/></Link>
+              ) : (
+                <button onClick={() => handleDemoLogin(card.key)} className="mt-5 w-full h-11 rounded-full bg-white border border-slate-200 font-bold text-sm hover:bg-surface flex items-center justify-center gap-2">{card.cta} <ArrowRight className="w-4 h-4"/></button>
+              )}
+              <div className="text-[11px] text-slate-400 text-center mt-2">{card.key === "CUSTOMER" ? "alex@kredit.be" : card.key === "ADMIN" ? "admin@kredit.be" : "super@kredit.be"} • démo sans backend • persistant</div>
             </div>
-          ))}
+          )})}
         </div>
 
         <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
