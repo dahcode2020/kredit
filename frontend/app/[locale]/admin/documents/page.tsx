@@ -1,10 +1,11 @@
 "use client";
 import AdminShell from "@/components/admin/AdminShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, t } from "@/lib/i18n";
 import { mockDocs } from "@/lib/mock";
 import { ShieldCheck } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
+  const tr = (k: string, vars?: Record<string, any>) => t(locale, `admin:${k}`, vars);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-4">
@@ -19,7 +20,7 @@ export default function Page({ params }: { params:{locale:string}}) {
             ))}
           </div>
         </div>
-        <div className="bg-white rounded-2xl border p-4 flex items-center gap-2 text-xs"><ShieldCheck className="w-4 h-4 text-emerald-500"/> ClamAV + OCR • S3 présigné • rétention 10y</div>
+        <div className="bg-white rounded-2xl border p-4 flex items-center gap-2 text-xs"><ShieldCheck className="w-4 h-4 text-emerald-500"/> {tr("documents.pipeline")}</div>
       </div>
     </AdminShell>
   );
