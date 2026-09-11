@@ -101,7 +101,7 @@ export default function Page({ params }: { params:{locale:string}}) {
               <div className="bg-surface rounded-xl p-4 space-y-2 text-sm">
                 <div><strong>Sujet:</strong> {preview.subject ?? '—'}</div>
                 <div><strong>Body:</strong> {preview.body}</div>
-                <div className="text-xs text-slate-500">Variables: {"{{name}}"} = Alex, {"{{id}}"} = KRD-0842, {"{{amount}}"} = {new Intl.NumberFormat(preview.locale==='en'?'en-BE':'fr-BE',{style:'currency',currency:'EUR'}).format(15000)}, {"{{monthly}}"} = 338,62€, {"{{date}}"} = {new Intl.DateTimeFormat(preview.locale==='en'?'en-BE':'fr-BE').format(new Date())}</div>
+                <div className="text-xs text-slate-500" suppressHydrationWarning>Variables: {"{{name}}"} = Alex, {"{{id}}"} = KRD-0842, {"{{amount}}"} = {new Intl.NumberFormat(preview.locale==='en'?'en-BE':'fr-BE',{style:'currency',currency:'EUR'}).format(15000)}, {"{{monthly}}"} = 338,62€, {"{{date}}"} = {new Intl.DateTimeFormat(preview.locale==='en'?'en-BE':'fr-BE').format(new Date())}</div>
                 <div className="text-xs text-slate-500">HSM: {preview.hsm ?? '—'} • Locale WhatsApp: {preview.locale==='en'?'en_US':preview.locale}</div>
               </div>
               <div className="flex gap-2 justify-end">

@@ -3,16 +3,21 @@ import AdminShell from "@/components/admin/AdminShell";
 import { Locale } from "@/lib/i18n";
 import { adminStats, mockAdminApps } from "@/lib/mockAdmin";
 import { Users, FolderKanban, Clock, Check, X, Wallet, RefreshCw, TrendingUp, AlertTriangle, ArrowRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
   const s = adminStats;
+  const [today, setToday] = useState<string>("");
+  useEffect(() => {
+    setToday(new Date().toLocaleDateString('fr-BE'));
+  }, []);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-6">
         <div className="flex flex-wrap justify-between gap-4">
           <div><h1 className="text-[22px] font-extrabold text-ink">Dashboard</h1><p className="text-sm text-slate-500">MFA obligatoire • ADMIN — 10 métriques</p></div>
-          <span className="px-3 py-1 rounded-full bg-white border text-xs font-bold">BE • EUR • {new Date().toLocaleDateString('fr-BE')}</span>
+          <span className="px-3 py-1 rounded-full bg-white border text-xs font-bold" suppressHydrationWarning>BE • EUR • {today || "—"}</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[

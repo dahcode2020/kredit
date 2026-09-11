@@ -30,7 +30,7 @@ export default function Page({ params }: { params: { locale: string } }) {
   };
 
   return (
-    <div className="bg-white">
+    <div suppressHydrationWarning className="bg-white">
       {/* HERO — Dewi style: dark overlay with stats left, image bg */}
       <section className="relative overflow-hidden bg-ink">
         <div className="absolute inset-0">

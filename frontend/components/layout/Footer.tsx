@@ -2,9 +2,12 @@
 import Link from "next/link";
 import { Locale, t } from "@/lib/i18n";
 import { ShieldCheck, Lock, FileText, Globe } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Footer({ locale }: { locale: Locale }) {
   const tr = (k: string) => t(locale, k);
+  const [year, setYear] = useState<number | null>(null);
+  useEffect(() => setYear(new Date().getFullYear()), []);
   return (
     <footer className="bg-ink text-white/80">
       <div className="mx-auto max-w-[1280px] px-6 py-14">
@@ -34,7 +37,7 @@ export default function Footer({ locale }: { locale: Locale }) {
         </div>
         <div className="mt-10 pt-6 border-t border-white/10">
           <p className="text-[11px] leading-5 text-white/45">⚠️ {tr("footer.disclaimer")}</p>
-          <p className="text-[11px] text-white/30 mt-3">© {new Date().getFullYear()} KREDIT — Inspiré par Dewi (Themewagon). Design system adapté fintech. PWA installable. Version 1.0 — Belgique.</p>
+          <p className="text-[11px] text-white/30 mt-3" suppressHydrationWarning>© {year ?? 2026} KREDIT — Inspiré par Dewi (Themewagon). Design system adapté fintech. PWA installable. Version 1.0 — Belgique.</p>
         </div>
       </div>
     </footer>

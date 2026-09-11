@@ -50,7 +50,7 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
   // Loading skeleton while hydrating persist (évite flash "non connecté" au refresh)
   if (!hasHydrated) {
     return (
-      <div className="min-h-screen bg-surface grid place-items-center py-20">
+      <div suppressHydrationWarning className="min-h-screen bg-surface grid place-items-center py-20">
         <div className="bg-white rounded-2xl border p-8 shadow-soft max-w-md w-full mx-4 text-center">
           <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse mx-auto" />
           <div className="h-4 bg-slate-100 animate-pulse rounded mt-4 w-32 mx-auto" />
@@ -63,7 +63,7 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
   // Non connecté — invite démo (persist corrigée, ne perd plus au refresh)
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-surface">
+      <div suppressHydrationWarning className="min-h-screen bg-surface">
         <div className="mx-auto max-w-[640px] px-6 py-16">
           <div className="bg-white rounded-[24px] border shadow-soft p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 grid place-items-center mx-auto"><Lock className="w-7 h-7" /></div>
@@ -95,7 +95,7 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
   const avatarImg = user?.email?.includes("alex") ? "https://i.pravatar.cc/100?img=12" : `https://i.pravatar.cc/100?u=${encodeURIComponent(displayEmail)}`;
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div suppressHydrationWarning className="min-h-screen bg-surface">
       {/* mobile header */}
       <div className="lg:hidden sticky top-[72px] z-30 bg-white border-b flex items-center justify-between px-4 h-14">
         <button onClick={()=>setOpen(!open)} className="w-10 h-10 rounded-full bg-ink text-white grid place-items-center">{open? <X className="w-5 h-5"/>: <Menu className="w-5 h-5"/>}</button>

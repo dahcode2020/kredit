@@ -25,7 +25,7 @@ export default function LocaleLayout({ children, params }: { children: React.Rea
       </div>
       <OfflineBanner />
       <UpdatePrompt />
-      <main id="main" className="pt-[72px] min-h-[60vh]">{children}</main>
+      <main suppressHydrationWarning id="main" className="pt-[72px] min-h-[60vh]">{children}</main>
       <Footer locale={locale} />
       <InstallPrompt />
     </>
