@@ -3,6 +3,7 @@
   "nav.simulator": "Simulator",
   "nav.products": "Kredieten",
   "nav.invest": "Investeren",
+  "nav.dashboard": "Dashboard",
   "nav.about": "Over ons",
   "nav.contact": "Contact",
   "nav.login": "Klantenzone",
@@ -66,5 +67,10 @@
   "contact.title": "Contact",
   "contact.subtitle": "Een menselijk team in Brussel",
   "cta.banner": "Klaar om te simuleren?",
-  "cta.bannerSub": "60 seconden, vrijblijvend, geen impact op uw score."
+  "cta.bannerSub": "60 seconden, vrijblijvend, geen impact op uw score.",
+  "seo.title": "KREDIT — Krediet & Beleggen (België)",
+  "seo.description": "Krediet en beleggen in België — EUR, indicatieve simulatie in 60 s, menselijke beslissing, onwijzigbare audit. Installeerbare PWA, in FR/EN/NL/DE.",
+  "seo.shortcut.simulator.description": "Indicatieve simulatie in 60 s — Franse aflossingsmethode",
+  "seo.shortcut.dashboard.description": "Mijn dossiers en aflossingsschema's volgen",
+  "seo.shortcut.invest.description": "Catalogus van Belgische producten — EUR"
 }

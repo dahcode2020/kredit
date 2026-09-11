@@ -3,6 +3,7 @@
   "nav.simulator": "Simulator",
   "nav.products": "Loans",
   "nav.invest": "Invest",
+  "nav.dashboard": "Dashboard",
   "nav.about": "About",
   "nav.contact": "Contact",
   "nav.login": "Client area",
@@ -66,5 +67,10 @@
   "contact.title": "Contact",
   "contact.subtitle": "A human team in Brussels",
   "cta.banner": "Ready to simulate?",
-  "cta.bannerSub": "60 seconds, no commitment, no impact on your score."
+  "cta.bannerSub": "60 seconds, no commitment, no impact on your score.",
+  "seo.title": "KREDIT — Credit & Investment (Belgium)",
+  "seo.description": "Credit and investment in Belgium — EUR, indicative simulation in 60 s, human decision, immutable audit trail. Installable PWA, in FR/EN/NL/DE.",
+  "seo.shortcut.simulator.description": "Indicative simulation in 60 s — French amortisation method",
+  "seo.shortcut.dashboard.description": "Track my files and repayment schedules",
+  "seo.shortcut.invest.description": "Belgian product catalogue — EUR"
 }

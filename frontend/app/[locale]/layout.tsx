@@ -1,7 +1,7 @@
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import HtmlLang, { HtmlLangScript } from "@/components/layout/HtmlLang";
-import { Locale, locales, defaultLocale, openGraphLocale } from "@/lib/i18n";
+import { Locale, locales, defaultLocale, openGraphLocale, t } from "@/lib/i18n";
 import { SITE_ORIGIN, SITE_NAME, ogImages } from "@/lib/seo";
 import { notFound } from "next/navigation";
 import ConnectivityStatus from "@/components/pwa/ConnectivityStatus";
@@ -23,8 +23,19 @@ export function generateStaticParams() {
  */
 export function generateMetadata({ params }: { params: { locale: string } }) {
   const locale = (locales as readonly string[]).includes(params.locale) ? (params.locale as Locale) : defaultLocale;
+  // Copie « hors React » du site : titre, description et manifeste. Elle était française pour les
+  // quatre langues (`title.default`/`description` du layout racine, `public/manifest.json`) — d'où
+  // un <title>, une meta description, un og:title et des tuiles de PWA en français sur /en, /nl, /de.
+  const seoTitle = t(locale, "common:seo.title");
+  const seoDescription = t(locale, "common:seo.description");
   return {
     metadataBase: new URL(SITE_ORIGIN),
+    title: { default: seoTitle },
+    description: seoDescription,
+    // Sans extension: c'est exactement le jeu prerenderend par le build (`/manifest/fr`,
+      // `/manifest/nl`, …) — un `.json` forcerait un rendu à la demande. Le type vient de
+      // l'en-tête `Content-Type: application/manifest+json` posé par la route.
+      manifest: `/manifest/${locale}`,
     alternates: {
       canonical: `/${locale}`,
       // hreflang: chaque langue pointe sa propre racine, plus `x-default` vers la locale par défaut
@@ -33,14 +44,20 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
     // Bloc **complet** : Next remplace `openGraph` au lieu de le fusionner, donc une déclaration
     // partielle ferait disparaître `og:image`, `og:site_name` et `og:type`.
     openGraph: {
-      title: "KREDIT — Crédit & Investissement (BE)",
-      description: "Simulation indicative, décision humaine, audit immuable. PWA installable.",
+      title: seoTitle,
+      description: seoDescription,
       url: `${SITE_ORIGIN}/${locale}`,
       siteName: SITE_NAME,
       type: "website",
       locale: openGraphLocale[locale],
       alternateLocales: locales.filter((l) => l !== locale).map((l) => openGraphLocale[l]),
       images: ogImages,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: seoTitle,
+      description: seoDescription,
+      images: ["/icons/icon-512.png"],
     },
     robots: { index: true, follow: true },
   };

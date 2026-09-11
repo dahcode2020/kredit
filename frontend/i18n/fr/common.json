@@ -3,6 +3,7 @@
   "nav.simulator": "Simulateur",
   "nav.products": "Crédits",
   "nav.invest": "Investir",
+  "nav.dashboard": "Tableau de bord",
   "nav.about": "À propos",
   "nav.contact": "Contact",
   "nav.login": "Espace client",
@@ -66,5 +67,10 @@
   "contact.title": "Contact",
   "contact.subtitle": "Une équipe humaine à Bruxelles",
   "cta.banner": "Prêt à simuler ?",
-  "cta.bannerSub": "60 secondes, sans engagement, sans impact sur votre scoring."
+  "cta.bannerSub": "60 secondes, sans engagement, sans impact sur votre scoring.",
+  "seo.title": "KREDIT — Crédit & Investissement (Belgique)",
+  "seo.description": "Crédit et investissement en Belgique — EUR, simulation indicative en 60 s, décision humaine, audit immuable. PWA installable, FR/EN/NL/DE.",
+  "seo.shortcut.simulator.description": "Simulation indicative en 60 s — méthode française",
+  "seo.shortcut.dashboard.description": "Suivre mes dossiers et échéanciers",
+  "seo.shortcut.invest.description": "Catalogue de produits belges — EUR"
 }

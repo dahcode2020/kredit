@@ -3,6 +3,7 @@
   "nav.simulator": "Simulator",
   "nav.products": "Kredite",
   "nav.invest": "Investieren",
+  "nav.dashboard": "Übersicht",
   "nav.about": "Über uns",
   "nav.contact": "Kontakt",
   "nav.login": "Kundenbereich",
@@ -66,5 +67,10 @@
   "contact.title": "Kontakt",
   "contact.subtitle": "Ein menschliches Team in Brüssel",
   "cta.banner": "Bereit zu simulieren?",
-  "cta.bannerSub": "60 Sekunden, unverbindlich, ohne Einfluss auf Ihr Scoring."
+  "cta.bannerSub": "60 Sekunden, unverbindlich, ohne Einfluss auf Ihr Scoring.",
+  "seo.title": "KREDIT — Kredit & Investition (Belgien)",
+  "seo.description": "Kredit und Investition in Belgien — EUR, indikative Simulation in 60 s, menschliche Entscheidung, unveränderliches Audit. Installierbare PWA, FR/EN/NL/DE.",
+  "seo.shortcut.simulator.description": "Indikative Simulation in 60 s — französische Tilgungsmethode",
+  "seo.shortcut.dashboard.description": "Meine Dossiers und Tilgungspläne verfolgen",
+  "seo.shortcut.invest.description": "Katalog belgischer Produkte — EUR"
 }

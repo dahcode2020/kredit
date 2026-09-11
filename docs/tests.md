@@ -90,6 +90,10 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   valeur invalide → chaîne vide et non `RangeError`), pureté de `relativeTime` (échoue dès que
   l'horloge est lue au calcul), et **hydratation** de `<RelativeTime>` : `renderToString` →
   `hydrateRoot` en écoutant `console.error` + `onRecoverableError`
+- `tests/unit/i18n-metadata.spec.ts` — parité `fr/en/nl/de` des 11 namespaces (clés, variables ICU,
+  blocs `plural`), détecteur de copie laissée en français (seule exception : l'endonyme
+  `language.fr`), `buildManifest(locale)` (aucune URL préfixée par une langue, tuiles localisées) et
+  `generateMetadata` (titre/description/twitter/manifest par segment)
 - `tests/unit/locale-propagation.spec.tsx` — tables de locale à source unique, `generateMetadata`
   par segment `[locale]` (canonical, hreflang, `og:locale`) et montage réel de la page Paiements en
   `fr` vs `nl` (le montant suit la langue de l'URL)

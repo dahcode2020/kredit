@@ -60,6 +60,26 @@ const RULES = [
     why: "Locale figée en argument d'un formatteur: le rendu ne suit plus le segment [locale]. Utiliser la variable `locale` de la page (ou useLocale()).",
   },
   {
+    // `"/fr/dashboard"` dans le code = une URL qui ne suit pas le segment [locale] (manifeste PWA,
+    // pages offline, motifs de cache: trois fuites trouvées comme ça). Un gabarit `/${locale}/…` est
+    // licite: seuls les littéraux starting avec un code de langue sont visés.
+    id: "localized-url-literal",
+    dirs: [...RENDER_DIRS, "lib", "hooks"],
+    re: /(["'`])\/(fr|en|nl|de)(?=[/?#]|["'`])/g,
+    why: "URL préfixée en dur par une langue dans le code: les trois autres langues héritent d'un lien français (le manifeste PWA faisait atterrir un utilisateur nl sur /fr). Construire `/${locale}/…`, ou écrire le motif `{locale}/…` quand c'est de la documentation.",
+  },
+  {
+    // La copie d'un layout (title/description) est traduite ou n'est pas dans ce fichier.
+    id: "untranslated-metadata",
+    dirs: ["app"],
+    re: /\b(title|description)\s*:\s*(["'])([^"'\n]*)\2/g,
+    accept: (m, rel) => {
+      if (!/(?:^|\/)app\/.*\/(layout|route)\.(t|j)sx?$/.test(rel) && rel !== "app/layout.tsx") return true;
+      return !/\s/.test(m[3]); // "KREDIT" (marque, sans espace) n'est pas de la copie à traduire
+    },
+    why: "Copie de métadonnée en littéral dans un layout: ce layout est partagé par les quatre langues (ou ne voit pas le segment). Passer par t(locale, \"common:seo.…\") dans `app/[locale]/layout.tsx`.",
+  },
+  {
     // Liste de locales recopiée dans un composant: la table du projet vit dans lib/locale-detection.
     id: "locale-list-literal",
     dirs: RENDER_DIRS,
@@ -144,7 +164,7 @@ for (const dir of ALL_DIRS) {
       let m;
       while ((m = rule.re.exec(src))) {
         if (rule.allowlist?.has(rel)) continue;
-        if (rule.accept?.(m)) continue; // motif déterministe: aucun risque d'hydratation
+        if (rule.accept?.(m, rel)) continue; // motif déterministe ou hors périmètre
         problems.push({ rel, line: lineOf(src, m.index), match: m[0].trim().replace(/\s+/g, " ").slice(0, 100), why: rule.why, rule: rule.id });
       }
     }
@@ -173,4 +193,4 @@ if (problems.length) {
   console.error("Patterns corrects: docs/hydration.md\n");
   process.exit(1);
 }
-console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, HTML en cache SW).");
+console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, URL préfixée par une langue, copie de métadonnée non traduite, HTML en cache SW).");

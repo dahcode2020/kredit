@@ -4,12 +4,16 @@ import { SITE_ORIGIN } from "@/lib/seo";
 
 export const metadata = {
   title: {
-    default: "KREDIT — Plateforme Européenne de Crédit & Investissement",
+    // Pas de `default` ici: le titre du site est une copie à traduire, donc fournie par
+    // `app/[locale]/layout.tsx` (`common:seo.title`). Une valeur dans ce layout aurait été servie
+    // aux quatre langues — `<title>`, meta description et `og:title` étaient en français sur /en,
+    // /nl et /de.
     template: "%s | KREDIT",
   },
-  description: "Belgique • EUR • FR/EN/NL/DE • Simulation indicative, décision humaine, audit immuable. PWA installable, hors ligne sécurisé.",
   applicationName: "KREDIT",
-  manifest: "/manifest.json",
+  // `manifest` est déclaré par `app/[locale]/layout.tsx` (`/manifest/{locale}.json`) : le nom,
+  // la description, `lang` et surtout les URL du manifeste dépendent de la langue du segment.
+  // `public/manifest.json` reste servi (repli des PWA déjà installées + precache du SW).
   keywords: ["crédit", "Belgique", "investissement", "TAEG", "KREDIT", "PWA", "fintech", "EUR"],
   authors: [{ name: "KREDIT", url: SITE_ORIGIN }],
   creator: "KREDIT",
@@ -23,12 +27,8 @@ export const metadata = {
   // bloc à moitié dans `app/[locale]/layout.tsx` faisait disparaître `og:image`, `og:site_name` et
   // `og:type`. Le bloc complet vit donc chez l'enfant, avec les constantes partagées de `lib/seo.ts`.
   // `og:title`/`og:description` retombent sur `title` et `description` ci-dessus (comportement Next).
-  twitter: {
-    card: "summary_large_image",
-    title: "KREDIT — Plateforme Européenne",
-    description: "Belgique • EUR • FR/EN/NL/DE",
-    images: ["/icons/icon-512.png"],
-  },
+  // Le bloc `twitter` est lui aussi déplacé dans `app/[locale]/layout.tsx` (mêmes raisons que
+  // `openGraph`: Next remplace le bloc chez l'enfant, et sa copie doit être traduite).
   icons: {
     icon: [
       { url: "/icons/icon-72.png", sizes: "72x72" },
@@ -65,7 +65,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

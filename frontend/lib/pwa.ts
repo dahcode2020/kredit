@@ -21,7 +21,7 @@ export const CACHE_STRATEGIES = {
     id: 'AUTHENTICATED_CONTENT',
     strategy: 'NetworkFirst',
     description: 'Pages authentifiées (dashboard, dossiers, profil) — NetworkFirst, pas de cache persistant données perso',
-    examples: ['/fr/dashboard', '/fr/credit/*', '/api/v1/customer/*'],
+    examples: ['/{locale}/dashboard', '/{locale}/credit/*', '/api/v1/customer/*'], // {locale} = fr|en|nl|de
     networkTimeoutSeconds: 5,
     neverCacheJson: true,
   },
@@ -45,7 +45,15 @@ export function getCacheStrategyForRequest(req: { url: string; method?: string; 
   return 'PUBLIC_CONTENT';
 }
 
-export const OFFLINE_FALLBACK_URL = '/fr/offline';
+/**
+ * Page offline par locale: `/public/sw.js` sert `/${locale}/offline` (les quatre sont precachees) ;
+ * l'ancienne constante `/fr/offline` figeait la langue du visiteur sur le francais et n'etait de
+ * toute facon lue nulle part. Le repli n'est utilise que si la locale demandee n'est pas en cache.
+ */
+export const OFFLINE_DEFAULT_LOCALE = "fr";
+export function offlineFallbackUrl(locale?: string | null) {
+  return `/${locale || OFFLINE_DEFAULT_LOCALE}/offline`;
+}
 
 // Inform user when operation requires server
 export function requiresServer(strategy: CacheStrategyId): boolean {

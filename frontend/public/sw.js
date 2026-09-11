@@ -6,7 +6,9 @@
 // - FINANCIAL_DATA: NetworkOnly (never cache — payments, credit, investments API & docs)
 // Never cache financial/personal sensitive data without encryption — per requirement.
 
-const VERSION = 'kredit-v5'; // v5: ne plus jamais mettre de HTML en cache (hydration mismatch après déploiement)
+const VERSION = 'kredit-v6'; // v5: jamais de HTML en cache (mismatch après déploiement) • v6: manifeste par locale
+// v6: manifeste PWA par locale (/manifest/{locale}.json) — purge les anciens caches qui gardaient
+// un manifeste dont start_url/shortcuts pointaient sur /fr pour toutes les langues.
 const STATIC_CACHE = `kredit-static-${VERSION}`;
 const PUBLIC_CACHE = `kredit-public-${VERSION}`;
 const OFFLINE_CACHE = `kredit-offline-${VERSION}`;
@@ -33,6 +35,7 @@ function isStaticAsset(req) {
   if (url.pathname.startsWith('/icons/')) return true;
   if (url.pathname.startsWith('/screenshots/')) return true;
   if (url.pathname === '/manifest.json') return true;
+  if (url.pathname.startsWith('/manifest/')) return true; // manifeste par locale (route statique)
   if (url.pathname === '/sw.js') return true;
   const dest = req.destination;
   if (['style', 'script', 'font', 'image'].includes(dest)) return true;

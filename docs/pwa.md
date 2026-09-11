@@ -4,22 +4,55 @@
 
 ---
 
+## 0bis. Manifeste par locale (`/manifest/{locale}`)
+
+Le manifeste est une ressource **hors arbre React** : il ne peut pas deviner la langue du visiteur.
+Il est donc généré par locale :
+
+- `lib/pwa-manifest.ts` construit `buildManifest(locale)` en surchargeant les champs dépendant de la
+  langue (`name`, `description`, `lang`, `dir`, `id`, `start_url`, `shortcuts`, `protocol_handlers`,
+  `share_target`) à partir de `public/manifest.json` (base : icônes, captures, couleurs, `display`)
+  et des dictionnaires (`common:seo.*`, `common:nav.*`) ;
+- `app/manifest/[locale]/route.ts` le sert (`force-static` + `generateStaticParams`,
+  `application/manifest+json`, 404 pour une locale non supportée) ;
+- `app/[locale]/layout.tsx` publie `manifest: \`/manifest/${locale}\`` dans ses métadonnées — le
+  layout racine ne met plus `<link rel="manifest">` en dur ;
+- `public/manifest.json` reste servi : c'est le repli des installations déjà présentes. Il ne doit
+  contenir **aucune URL préfixée par une langue** (le test le vérifie) sinon le middleware
+  redirigerait l'application installée vers la langue détectée du visiteur, pas vers celle de
+  l'installation ;
+- le matcher de `middleware.ts` exclut `manifest/` (comme `manifest.json`) : sinon la redirection de
+  locale transforme `/manifest/nl` en `/nl/manifest/nl` (307) et la PWA ne s'installe plus — c'est le
+  premier truc à vérifier quand un manifeste « 404 » alors que la route existe (`next build` liste les
+  quatre `/manifest/{locale}` sont prérendérisées) ;
+- `public/sw.js` traite `/manifest/*` comme un asset statique et la version est passée à
+  `kredit-v6` : sans purge, les postes déjà installés gardaient en `CacheFirst` (30 j) l'ancien
+  `/manifest.json` dont `start_url` valait `/fr?utm_source=homescreen`.
+
+La page served offline est la même logique : `offlineFallbackUrl(locale)` (`lib/pwa.ts`) renvoie
+`/{locale}/offline`, le SW precache les quatre et ne retombe sur `fr` que si la sienne manque.
 ## 1. Manifeste
 
-`frontend/public/manifest.json` (W3C)
+`/manifest/{locale}` (W3C), construit par `lib/pwa-manifest.ts` à partir de
+`frontend/public/manifest.json` pris comme **base** (voir §0bis — le fichier de base reste servi, mais
+seulement comme repli des installations déjà présentes).
 
-- **name** `KREDIT — Crédit & Investissement (BE)` / **short_name** `KREDIT`
-- **id** `/`, **scope** `/`, **start_url** `/fr?utm_source=homescreen`
+- **name** = `t(locale, "common:seo.title")` (`KREDIT — Krediet & Beleggen (België)` en `nl`, etc.)
+  / **short_name** `KREDIT` — **description** = `common:seo.description`
+- **id** `/{locale}`, **scope** `/`, **start_url** `/{locale}?utm_source=homescreen` — une
+  installation depuis `/nl` ouvre `/nl`, plus `/fr`
 - **display** `standalone` + `display_override: ["window-controls-overlay","standalone","browser"]`
 - **theme_color / background_color** `#0F1115` (Dewi dark)
-- **orientation** `any`, **lang** `fr`, **dir** `ltr`, **categories** `finance,business`
+- **orientation** `any`, **lang** = la locale du segment, **dir** = `localeDir[locale]`, **categories** `finance,business`
 - **icons** 10 entrées (72…512 + maskable 512) `purpose:any maskable` — génération ImageMagick depuis `base-1024.png` (#FF4A17 / #0F1115, K)
   - `icon-72.png` … `icon-512.png`, `maskable-512.png` (safe zone), `apple-touch-icon.png` (180)
 - **screenshots** `desktop-1.png` (1280×720 wide) + `mobile-1.png` (720×1280 narrow)
-- **shortcuts** 3 : Simulateur (`/fr#simulateur`), Dashboard (`/fr/dashboard`), Investissements (`/fr/investments`)
+- **shortcuts** 3, libellés dans `common:nav.*` et descriptions dans `common:seo.shortcut.*.description` :
+  Simulateur (`/{locale}#simulateur`), Dashboard (`/{locale}/dashboard`), Investissements (`/{locale}/investments`)
 - **related_applications** `[]`, **prefer_related_applications** `false`
 - **handle_links** `preferred`, **launch_handler** `navigate-existing`, **edge_side_panel** 400
-- **share_target** `GET /fr?share-target` + **protocol_handlers** `web+kredit`
+- **share_target** `GET /{locale}?share-target` + **protocol_handlers** `web+kredit` → `/{locale}?url=%s`
+- le fichier de base ne contient **aucune** URL préfixée par une langue (vérifié par test)
 
 Splash screen : généré par le navigateur depuis `background_color + theme_color + icons + name` ; iOS complément via `<link rel="apple-touch-icon">` + `apple-mobile-web-app-capable` + `apple-splash` (optionnel).
 
@@ -29,7 +62,9 @@ Responsive : manifest `orientation:any` + layout `viewport: width=device-width, 
 
 ## 2. Service Worker — `frontend/public/sw.js`
 
-Version `kredit-v2`. Caches : `kredit-static-v2`, `kredit-public-v2`, `kredit-offline-v2`.
+Version `kredit-v6`. Caches : `kredit-static-v6`, `kredit-public-v6`, `kredit-offline-v6`.
+`VERSION` est le levier de purge : on la change dès qu'un champ servi hors requête change de sens
+(ici le manifeste, §0bis ; pour le HTML, `docs/hydration.md` règle 9).
 
 ### Précache (install)
 

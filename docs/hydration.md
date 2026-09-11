@@ -117,7 +117,12 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
       `t("fr", …)`), `locale-list-literal` (liste `['fr','en','nl','de']` recopiée — c'est ainsi qu'un
       template `fr` était exclu de son propre aperçu) et `intl-tag-in-ui` (`localeToIntl` importé dans
       un composant ; seule exception documentée : `components/layout/HtmlLang.tsx`, qui pose
-      `data-intl` hors arbre React).
+      `data-intl` hors arbre React). Deux règles jumelles verrouillent la variante « hors arbre
+      React » du même défaut (passée 6) : `localized-url-literal` (aucune URL commençant par
+      `/fr/`… dans `app/`, `components/`, `lib/`, `hooks/` — c'est ainsi que `start_url` du manifeste
+      PWA et les motifs de cache étaient français pour tout le monde) et `untranslated-metadata`
+      (aucun `title:`/`description:` en littéral dans un `layout.tsx`/`route.ts` de `app/` : cette
+      copie passe par `t(locale, "common:seo.*")`).
 
     Conséquence mesurée au passage (et piégée par un test) : Next **remplace** le bloc `openGraph`
     entre parent et enfant au lieu de le fusionner — le redéclarer à moitié dans le layout enfant

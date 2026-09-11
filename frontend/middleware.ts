@@ -49,4 +49,12 @@ export function middleware(req: NextRequest) {
   return res;
 }
 
-export const config = { matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.json).*)"] };
+/**
+ * Ce matcher décide quelles requêtes **ne sont pas** traitées par la redirection de locale.
+ * `manifest/` est indispensable depuis que le manifeste PWA est une route par locale
+ * (`/manifest/nl`) : sans lui, le middleware réécrit `/manifest/nl` en `/nl/manifest/nl` (307) et
+ * le navigateur ne récupère aucun manifeste — l'installation de la PWA échoue silencieusement.
+ * (Le fichier statique `manifest.json` y était déjà, pour la même raison : le test
+ * `tests/unit/i18n-metadata.spec.ts` verrouille les deux.)
+ */
+export const config = { matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.json|manifest/).*)"] };
