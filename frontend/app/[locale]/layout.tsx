@@ -30,7 +30,10 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   const seoDescription = t(locale, "common:seo.description");
   return {
     metadataBase: new URL(SITE_ORIGIN),
-    title: { default: seoTitle },
+    // `absolute` (et non `default`): le motif `%s | KREDIT` du layout racine produisait
+    // « KREDIT — Krediet & Beleggen (België) | KREDIT », un doublon de marque. Un titre de page
+    // futur reste templaté normalement.
+    title: { absolute: seoTitle },
     description: seoDescription,
     // Sans extension: c'est exactement le jeu prerenderend par le build (`/manifest/fr`,
       // `/manifest/nl`, …) — un `.json` forcerait un rendu à la demande. Le type vient de

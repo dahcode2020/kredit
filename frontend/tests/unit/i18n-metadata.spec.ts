@@ -161,12 +161,13 @@ describe("métadonnées du layout [locale] — copie localisée", () => {
 
   it.each(LANGS)("/%s — title, description, twitter et manifest du layout", async (lang) => {
     const md = await layout.generateMetadata({ params: { locale: lang } });
-    expect(md.title.default).toBe(t(lang, "common:seo.title"));
+    expect(md.title.absolute).toBe(t(lang, "common:seo.title"));
+    expect(md.title.default).toBeUndefined();
     expect(md.description).toBe(t(lang, "common:seo.description"));
     expect(md.manifest).toBe(`/manifest/${lang}`);
-    expect(md.openGraph.title).toBe(md.title.default); // un seul endroit définit la copie
+    expect(md.openGraph.title).toBe(md.title.absolute); // un seul endroit définit la copie
     expect(md.openGraph.description).toBe(md.description);
-    expect(md.twitter.title).toBe(md.title.default);
+    expect(md.twitter.title).toBe(md.title.absolute);
     expect(md.twitter.description).toBe(md.description);
   });
 
@@ -175,7 +176,7 @@ describe("métadonnées du layout [locale] — copie localisée", () => {
     const descriptions = [] as string[];
     for (const lang of LANGS) {
       const md = await layout.generateMetadata({ params: { locale: lang } });
-      titres.push(md.title.default);
+      titres.push(md.title.absolute);
       descriptions.push(md.description);
     }
     expect(new Set(titres).size).toBe(4);
@@ -204,6 +205,7 @@ describe("métadonnées du layout [locale] — copie localisée", () => {
     expect(root.metadata.manifest).toBeUndefined();
     expect(root.metadata.description).toBeUndefined();   // servie aux 4 langues: déplacée chez l'enfant
     expect(root.metadata.title.default).toBeUndefined();
+    expect(root.metadata.title.absolute).toBeUndefined();
     expect(root.metadata.twitter).toBeUndefined();
     expect(root.metadata.title.template).toBe("%s | KREDIT"); // motif commun, non traduit: OK
   });
