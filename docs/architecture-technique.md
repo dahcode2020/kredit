@@ -109,7 +109,7 @@ kredit/
 | Dossier | Responsabilité | Contient | Dépend de |
 |---------|---------------|----------|-----------|
 | `app/` | Routage, layouts, SSR/SSG, middleware locale, PWA shell | `layout.tsx`, `page.tsx`, `middleware.ts` | `components`, `features`, `i18n`, `services` |
-| `components/ui` | Design system Dewi (Button, Card, Badge, Modal, Table) | `Button.tsx` | `styles`, `lib/utils` |
+| `components/ui` | Design system Dewi (Button, Card, Badge, Modal, Table, `RelativeTime`) | `Button.tsx` | `styles`, `lib/utils`, `lib/formatters` |
 | `components/layout` | Header (dark Dewi), Footer, Nav, LanguageSwitcher | `Header.tsx` | `i18n`, `hooks` |
 | `components/credit` | Briques crédit réutilisables | `Simulator.tsx` | `services/simulation` |
 | `features/*` | Slices métier front (state + queries + forms) | `features/credit-simulation/{ Simulator, useSimulator, schema }` | `services`, `types`, `hooks` |
@@ -122,6 +122,21 @@ kredit/
 | `public/` | Assets PWA statiques | `manifest.json`, `sw.js` | — |
 
 **Règle:** `app` n'a pas de logique métier — tout est délégué à `features` + `services`.
+
+**Images:** `next/image` est la norme dans `app/` et `components/` — `@next/next/no-img-element`
+y est une **erreur** de lint (`frontend/.eslintrc.json`). Les visuels non optimisés (hero 1920 px,
+≈ 1,9 Mo, sans `width`/`height` → CLT/LCP dégradés) passaient par `<img>` ; `<Image>` dimensionne
+et transcode via les presets de `next.config.js` (`formats` AVIF/WebP, `deviceSizes`,
+`remotePatterns` pour `images.unsplash.com` et `i.pravatar.cc`). **Conséquence à ne pas oublier:**
+`sharp` est en `dependencies` et non en `devDependencies` — c'est l'optimiseur de `next start` qui
+l'appelle, et le `Dockerfile` runtime ne copie que `node_modules` + `.next`. Sans lui, chaque image
+optimisée répond 500 **uniquement en prod** (`next dev` a son propre chemin) ; le contrôle est
+`curl '/_next/image?url=%2F<asset>&w=256&q=75'` → `200 image/webp`.
+
+**Dates & heures:** tout affichage utilisateur passe par `lib/formatters.ts` — `resolveDate` ancre
+les chaînes sans décalage sur UTC (jamais `new Date("<chaîne>")` dans un composant), le `timeZone`
+est forcé à `Europe/Brussels`, et un écart humanisé se rend avec `<RelativeTime>` (premier rendu
+déterministe). Voir `docs/hydration.md` §2.10.
 
 ### 2.2 Backend — détail par module
 

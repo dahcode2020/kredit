@@ -2,6 +2,12 @@ process.env.TZ = 'Europe/Brussels';
 
 try { require('whatwg-fetch'); } catch {}
 
+// jsdom ne fournit pas TextEncoder/TextDecoder, dont react-dom/server a besoin
+// pour rendre un composant dans un test d'hydratation.
+const util = require('util');
+if (typeof globalThis.TextEncoder === 'undefined') (globalThis as any).TextEncoder = util.TextEncoder;
+if (typeof globalThis.TextDecoder === 'undefined') (globalThis as any).TextDecoder = util.TextDecoder;
+
 // Mock next/navigation, next-intl if needed
 try {
   jest.mock('next/navigation', () => ({

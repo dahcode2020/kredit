@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Badge, Button, buttonClasses } from "@/components/ui/Button";
 import Simulator from "@/components/credit/Simulator";
@@ -34,7 +35,7 @@ export default function Page({ params }: { params: { locale: string } }) {
       {/* HERO — Dewi style: dark overlay with stats left, image bg */}
       <section className="relative overflow-hidden bg-ink">
         <div className="absolute inset-0">
-          <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&auto=format&fit=crop&q=80" alt="" className="w-full h-full object-cover opacity-40" />
+          <Image src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&auto=format&fit=crop&q=80" alt="" fill priority sizes="100vw" className="object-cover opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/40" />
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-transparent" />
         </div>
@@ -145,7 +146,7 @@ export default function Page({ params }: { params: { locale: string } }) {
             <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-ink text-white text-xs font-bold tracking-widest uppercase"><Award className="w-4 h-4 text-primary" /> {tr("about.badge")}</div>
           </div>
           <div className="relative">
-            <img src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=900&auto=format&fit=crop&q=80" alt="team" className="rounded-[24px] w-full object-cover h-[420px] shadow-card" />
+            <Image src="https://images.unsplash.com/photo-1553877522-43269d4ea984?w=900&auto=format&fit=crop&q=80" alt="team" width={900} height={560} sizes="(min-width: 1024px) 45vw, 100vw" className="rounded-[24px] w-full h-[420px] object-cover shadow-card" />
             <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-card border p-5 w-[280px] hidden md:block">
               <div className="text-xs tracking-widest uppercase font-bold text-slate-500">Conforme dès le design</div>
               <div className="mt-2 space-y-2 text-sm">
@@ -177,7 +178,7 @@ export default function Page({ params }: { params: { locale: string } }) {
               { icon: BarChart3, title: tr("products.invest"), desc: "Fonds & obligations • Risque 1-7 • Quiz adéquation • Perte en capital possible", img: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=600&auto=format&fit=crop&q=80", tag: "Investissement" },
             ].map(card => (
               <div key={card.title} className="bg-white rounded-[20px] overflow-hidden shadow-soft border group hover:shadow-card transition">
-                <div className="relative h-[180px] overflow-hidden"><img src={card.img} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition duration-500" /><span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[11px] font-bold tracking-widest uppercase text-ink border">{card.tag}</span></div>
+                <div className="relative h-[180px] overflow-hidden"><Image src={card.img} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" className="h-full object-cover group-hover:scale-[1.03] transition duration-500" /><span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-white/95 backdrop-blur text-[11px] font-bold tracking-widest uppercase text-ink border">{card.tag}</span></div>
                 <div className="p-6">
                   <div className="w-10 h-10 rounded-xl bg-primary-light text-primary grid place-items-center"><card.icon className="w-5 h-5" /></div>
                   <h3 className="mt-3 font-extrabold text-ink">{card.title}</h3>
@@ -227,7 +228,7 @@ export default function Page({ params }: { params: { locale: string } }) {
               <li className="flex gap-2"><Check className="w-4 h-4 text-emerald-500 mt-0.5" /> Audit hash-chaîné, export WORM</li>
             </ul>
           </div>
-          <img src={["https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=800&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800&auto=format&fit=crop&q=80"][activeTab]} alt="" className="rounded-2xl w-full h-[300px] object-cover" />
+          <Image key={activeTab} src={["https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=800&auto=format&fit=crop&q=80", "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=800&auto=format&fit=crop&q=80"][activeTab]} alt="" width={800} height={500} sizes="(min-width: 1024px) 50vw, 100vw" className="rounded-2xl w-full h-[300px] object-cover" />
         </div>
       </section>
 
@@ -275,7 +276,7 @@ export default function Page({ params }: { params: { locale: string } }) {
 
       {/* Testimonials — over image like Dewi */}
       <section className="relative py-16">
-        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80" alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <Image src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1600&auto=format&fit=crop&q=80" alt="" fill sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-ink/80" />
         <div className="relative mx-auto max-w-[1280px] px-6">
           <div className="text-center text-white">
@@ -293,7 +294,7 @@ export default function Page({ params }: { params: { locale: string } }) {
                 <Quote className="w-6 h-6 text-primary/20 mt-3" />
                 <p className="text-sm leading-6 text-slate-700 mt-1">“{tes.r}”</p>
                 <div className="mt-4 flex items-center gap-3">
-                  <img src={`https://i.pravatar.cc/100?img=${tes.s+10}`} alt="" className="w-9 h-9 rounded-full" />
+                  <Image src={`https://i.pravatar.cc/100?img=${tes.s+10}`} alt="" width={36} height={36} className="rounded-full" />
                   <div><div className="text-sm font-bold text-ink">{tes.n}</div><div className="text-xs text-slate-500">Client vérifié • BE</div></div>
                 </div>
               </div>

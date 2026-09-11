@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
     "start": "next start -p 3000 -H 0.0.0.0",
-    "lint": "next lint --max-warnings=200",
+    "lint": "next lint --max-warnings=0",
     "test": "jest",
     "test:unit": "jest --testPathPattern='tests/unit'",
     "test:pwa": "jest --testPathPattern='tests/pwa'",
@@ -24,6 +24,7 @@
     "next": "14.2.15",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "sharp": "^0.33.5",
     "tailwind-merge": "2.5.4",
     "zustand": "5.0.2"
   },

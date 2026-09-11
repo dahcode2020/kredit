@@ -12,7 +12,7 @@ export default function Page({ params }: { params:{locale:string}}) {
   const [today, setToday] = useState<string>("");
   useEffect(() => {
     setToday(formatDate(new Date(), locale));
-  }, []);
+  }, [locale]);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-6">

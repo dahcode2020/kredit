@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, FileText, Calculator, Wallet, TrendingUp, CreditCard, FolderKanban, Bell, Settings, User, Shield, LogOut, Menu, X, Home, Lock } from "lucide-react";
 import { useState } from "react";
@@ -107,7 +108,7 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
         <aside className={`${open? 'block':'hidden'} lg:block w-full lg:w-[260px] shrink-0 lg:sticky lg:top-[88px] h-fit`}>
           <div className="bg-white rounded-none lg:rounded-[20px] border lg:sticky lg:top-[88px] overflow-hidden shadow-soft">
             <div className="p-4 border-b flex items-center gap-3">
-              <img src={avatarImg} alt="" className="w-10 h-10 rounded-full object-cover" />
+              <Image src={avatarImg} alt="" width={40} height={40} className="rounded-full object-cover" />
               <div className="min-w-0"><div className="text-sm font-bold text-ink truncate">{displayName}</div><div className="text-xs text-slate-500 truncate">{displayEmail} • BE</div></div>
               <span className="ml-auto w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="KYC vérifié — connecté" />
             </div>

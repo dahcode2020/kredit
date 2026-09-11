@@ -9,6 +9,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/$1',
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js',
   },
+  // Le fuseau du CI ne doit pas décider du résultat: voir tests/global-setup.js
+  globalSetup: '<rootDir>/tests/global-setup.js',
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   transform: {
     // Config ts-jest modern (le bloc `globals: { 'ts-jest': … }` est déprécié)

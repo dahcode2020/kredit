@@ -1,12 +1,22 @@
 {
-  "extends": ["next/core-web-vitals"],
-  "plugins": ["react-hooks"],
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "plugins": [
+    "react-hooks"
+  ],
   "rules": {
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
-    "@next/next/no-img-element": "warn",
+    "@next/next/no-img-element": "error",
     "@next/next/no-html-link-for-pages": "error",
     "jsx-a11y/anchor-is-valid": "warn"
   },
-  "ignorePatterns": ["node_modules", ".next", "next-env.d.ts", "out", "scripts/*.mjs"]
+  "ignorePatterns": [
+    "node_modules",
+    ".next",
+    "next-env.d.ts",
+    "out",
+    "scripts/*.mjs"
+  ]
 }

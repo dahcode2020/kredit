@@ -76,13 +76,20 @@ expect(totalCost).toBe(round(monthly*n+fees));
 - `tests/unit/payment.idempotency.spec.ts` — même key → même Payment, 409 si payload diff
 - `frontend/tests/unit/pwa-cache.test.ts` — strategies STATIC/PUBLIC/AUTH/FINANCIAL non-cache
 
-**Frontend — `frontend/jest.config.js`** (`ts-jest`, `testEnvironment: jsdom`, TZ `Europe/Brussels`)
+**Frontend — `frontend/jest.config.js`** (`ts-jest`, `testEnvironment: jsdom`). Le fuseau du
+processus est épinglé à `Europe/Brussels` par `tests/global-setup.js` — pas par `process.env.TZ`
+dans `setupFilesAfterEnv` : posé après le démarrage du worker, il ne rejoint pas l'analyseur
+de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du runtime ».
 
 - `tests/unit/amortize.precision.spec.ts` — mensualités Decimal HALF_UP, solde final forcé à 0
 - `tests/unit/i18n.money.spec.ts` — `formatEUR`/`formatEUR2` fr-BE / en-BE / nl-BE
 - `tests/unit/hydration.spec.ts` — **verrous anti-hydratation** : sorties Intl sans espace
   non normalisé, identité U+202F ↔ U+00A0 (CLDR simulé), dates à fuseau forcé, et hiérarchie de
   détection de locale (`lib/locale-detection.ts`) partagée avec le middleware
+- `tests/unit/dates-timezone.spec.tsx` — `resolveDate` (parité chaîne naive / ISO, « jour seul »,
+  valeur invalide → chaîne vide et non `RangeError`), pureté de `relativeTime` (échoue dès que
+  l'horloge est lue au calcul), et **hydratation** de `<RelativeTime>` : `renderToString` →
+  `hydrateRoot` en écoutant `console.error` + `onRecoverableError`
 - `tests/pwa/cache-strategies.spec.ts` — stratégies déclaratives + manifest
 - `tests/a11y/axe.spec.ts` — invariants a11y statiques (landmarks, palette)
 - garde-fous hors Jest : `npm run check:hydration` (APIs au render + imbrications HTML) et

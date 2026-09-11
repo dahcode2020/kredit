@@ -51,6 +51,24 @@ const RULES = [
     why: "Intl/toLocale* en dur dans un composant : espacement dépendant du runtime → mismatch serveur/navigateur. Utiliser formatCurrency/formatDate/formatEUR (normalisés via lib/intl.ts).",
   },
   {
+    // `new Date("2026-09-09 14:22")` = temps LOCAL côté moteur de JS: serveur UTC et
+    // navigateur +02:00 ne renvoient pas le même instant → dates différentes → mismatch.
+    id: "raw-date-parse",
+    dirs: RENDER_DIRS,
+    // Seules les chaînes SANS décalage sont dangereuses : « …Z », « …+02:00 » et « jour seul »
+    // sont définis par la spec (UTC), donc identiques entre serveur et navigateur.
+    re: /new\s+Date\s*\(\s*(["'`])([^"'`\n]*)\1/g,
+    accept: (m) => /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(m[2]) || /^\d{4}-\d{2}-\d{2}$/.test(m[2]),
+    why: "Chaîne de date sans décalage horaire analysée dans un composant : le rendu dépend du fuseau du runtime (UTC serveur vs heure locale navigateur). Écrire le décalage (…+02:00) ou passer par resolveDate()/formatDate(…, locale) de lib/formatters.",
+  },
+  {
+    // Lit Date.now() au moment de l'appel → texte différent entre serveur et client.
+    id: "relative-time-in-render",
+    dirs: RENDER_DIRS,
+    re: /\bformatRelative\s*\(/g,
+    why: "formatRelative() lit Date.now() à l'appel: à remplacer par <RelativeTime date locale now /> (composant) ou relativeTime(date, now, locale) avec un `now` fourni par le serveur.",
+  },
+  {
     id: "hydration-bandaid",
     dirs: RENDER_DIRS,
     re: /suppressHydrationWarning/g,
@@ -95,6 +113,7 @@ for (const dir of ALL_DIRS) {
       let m;
       while ((m = rule.re.exec(src))) {
         if (rule.allowlist?.has(rel)) continue;
+        if (rule.accept?.(m)) continue; // motif déterministe: aucun risque d'hydratation
         problems.push({ rel, line: lineOf(src, m.index), match: m[0].trim().replace(/\s+/g, " ").slice(0, 100), why: rule.why, rule: rule.id });
       }
     }

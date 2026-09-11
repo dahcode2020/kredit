@@ -16,7 +16,7 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
   const [decidedAt, setDecidedAt] = useState<string>("");
   useEffect(() => {
     if (decided) setDecidedAt(formatDateTime(new Date(), locale));
-  }, [decided]);
+  }, [decided, locale]);
   const eur = (v: number) => formatEUR2(v, localeToIntl[locale]);
   return (
     <AdminShell locale={locale} role="ADMIN">

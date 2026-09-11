@@ -79,19 +79,49 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
    corrompus des visiteurs existants, et correction des `ReferenceError: url is not defined`
    dans `networkFirst`/`networkOnly` (le fallback offline levait → rechargements en boucle).
 
+10. **Un instant ne se lit pas dans le rendu, et une date ne se parse pas « à la légère ».**
+    Deux pièges distincts, tous deux corrigés :
+    - les chaînes `YYYY-MM-DD HH:mm` (SQL, mocks) passées à `new Date()` sont lues en **heure
+      locale du runtime** : `2026-09-09 14:22` devient 14:22Z sur un serveur UTC et 14:22+02:00
+      dans un navigateur belge → la même ligne de liste s'affiche à deux heures, parfois à deux
+      **jours**. `resolveDate()` (`lib/formatters.ts`) ancre ces valeurs sur UTC, avertit en
+      développement et réclame de l'ISO-8601 avec décalage à la source ; `formatDate`,
+      `formatDateTime`, `formatDateLong` et `relativeTime` y passent tous et forcent
+      `timeZone: Europe/Brussels`. Une valeur invalide rend une chaîne vide au lieu de faire
+      planter `Intl` (`RangeError: Invalid time value`) — un champ de date manquant ne doit pas
+      emporter la page.
+    - « il y a 3 heures » dépend de l'horloge : `formatRelative()` lit `Date.now()` à l'appel et
+      est donc **interdit dans un composant** (règle `relative-time-in-render` de
+      `scripts/check-hydration.mjs`, avec `raw-date-parse` pour les chaînes sans décalage).
+      À la place, `<RelativeTime date locale now />` (`components/ui/RelativeTime.tsx`) :
+      premier rendu déterministe — date absolue, ou relatif calculé depuis le `now` **reçu en prop
+      du serveur** si on veut éviter le saut visuel — puis bascule en relatif dans un
+      `useEffect`, rafraîchi toutes les 60 s et nettoyé au démontage. Le `<time dateTime=… title=…>`
+      conserve l'instant exact : l'information ne dépend jamais du moment où le HTML a été produit.
+
+    Les données suivent la même règle : `lib/mock.ts` écrit `2026-09-09T14:22:00+02:00`.
+
 ## 3. Vérification
 
-Verrous permanents dans la suite Jest (`npm --prefix frontend test`, fichier
-`tests/unit/hydration.spec.ts`) : aucun espace non normalisé ne sort des formatteurs, et la
-sortie est **identique** que le runtime emploie U+202F ou U+00A0 (le test simule un CLDR de
-navigateur en proxifiant `Intl.NumberFormat`), plus la table de priorité de détection de locale.
-Contrôle fait pendant la correction : normalisation neutralée → 4 de ces tests échouent.
+Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :
+
+- `tests/unit/hydration.spec.ts` — aucun espace non normalisé ne sort des formatteurs, et la
+  sortie est **identique** que le runtime emploie U+202F ou U+00A0 (le test simule un CLDR de
+  navigateur en proxifiant `Intl.NumberFormat`), plus la table de priorité de détection de locale ;
+- `tests/unit/dates-timezone.spec.tsx` — `resolveDate` (ancrage UTC, offsets explicites, « jour
+  seul », valeur invalide), pureté de `relativeTime` (l'appel échoue si l'horloge est lue), et
+  **hydratation réelle** de `<RelativeTime>` : `renderToString` puis `hydrateRoot` dans jsdom,
+  avec `onRecoverableError` + écoute de `console.error` (un écart de texte ferait échouer le test).
+
+Le fuseau du processus de test est épinglé par `tests/global-setup.js` (`TZ=Europe/Brussels`) :
+sinon un CI en UTC rendrait indétectable le retour d'un parse « à la locale ».
 
 ```bash
 cd frontend
 npm run lint                     # eslint-config-next + react/no-unescaped-entities (voir .eslintrc.json)
 npm test                         # verrous Jest (tests/unit/hydration.spec.ts)
-npm run check:hydration          # garde-fous statiques (zéro dépendance) : APIs au render + imbrications HTML
+npm run check:hydration          # garde-fous statiques (zéro dépendance) : APIs au render, dates
+                                 # sans décalage, temps relatif au render, imbrications HTML
 npx next build                   # le prerender de toutes les pages [locale] casse si un render touche une API navigateur
 ```
 
