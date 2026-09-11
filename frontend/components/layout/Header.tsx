@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Locale, locales, t, setPersistedLocale } from "@/lib/i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ConnectivityDot } from "@/components/pwa/ConnectivityStatus";
 
 export default function Header({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function Header({ locale }: { locale: Locale }) {
           <span className="hidden md:inline-flex items-center gap-1.5 ml-2 px-2.5 py-1 rounded-full bg-white/10 text-white/80 text-[10px] font-bold tracking-widest uppercase border border-white/10">
             <Shield className="w-3 h-3" /> BE • EUR
           </span>
+          <span className="hidden lg:inline-flex ml-2"><ConnectivityDot /></span>
         </Link>
 
         <nav className="hidden lg:flex items-center gap-7">

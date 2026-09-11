@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kredit.be/sitemap.xml
+
+# PWA: allow sw.js & manifest
+Allow: /sw.js
+Allow: /manifest.json
