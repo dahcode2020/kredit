@@ -21,6 +21,8 @@ const ALL_DIRS = [...RENDER_DIRS, "hooks", "lib", "services"];    // code appel�
 
 /** Exceptions justifiées (documentées dans docs/hydration.md). */
 const HYDRATION_WARNING_ALLOWLIST = new Set(["app/layout.tsx"]); // <html lang> muté hors React
+/** `data-intl` posé sur <html> hors arbre React: le tag Intl est lu, pas utilisé pour formater. */
+const INTL_TAG_ALLOWLIST = new Set(["components/layout/HtmlLang.tsx"]);
 
 const RULES = [
   {
@@ -40,7 +42,36 @@ const RULES = [
     id: "implicit-locale",
     dirs: ALL_DIRS,
     re: /\.(toLocaleString|toLocaleDateString|toLocaleTimeString)\(\s*\)|new Intl\.(NumberFormat|DateTimeFormat|RelativeTimeFormat|ListFormat)\(\s*undefined/g,
-    why: "Locale implicite = locale du runtime (Node ≠ navigateur). Passer une locale explicite, ex. localeToIntl[locale].",
+    why: "Locale implicite = locale du runtime (Node ≠ navigateur). Passer la locale du segment: formatCurrency(v, locale), formatDate(d, locale).",
+  },
+  {
+    // Le piège de la passe 5: `formatEUR2(v, "fr-BE")` dans une page `nl`/`de` (et `locale: "fr_BE"`,
+    // `canonical: "/fr"` dans le layout racine, qui ne voit pas les params du segment).
+    id: "locale-tag-literal",
+    dirs: RENDER_DIRS,
+    re: /(["'])(fr|en|nl|de|it|es|pt)[-_](BE|FR|NL|DE|US|GB|CH|CA)\1/gi,
+    why: "Tag de locale en dur dans une page/composant: 3 des 4 marchés se retrouvent formatés (ou indexés) comme le français, et le jour où un appelant dérive la locale du segment, serveur et client divergent. Passer la locale du segment — formatEUR2(v, locale), formatCurrency(v, locale) — les tables (localeToIntl, openGraphLocale) vivent dans lib/.",
+  },
+  {
+    id: "locale-arg-literal",
+    dirs: RENDER_DIRS,
+    // Locale en argument: soit en tête (`t("fr", key)`), soit en dernier (`formatDate(d, "fr")`).
+    re: /\b(?:formatDate|formatDateLong|formatDateTime|formatCurrency0?|formatPercent|formatNumber|formatList|formatEUR2?|formatPhoneBE|formatRelative|relativeTime|tNs|t)\s*\(\s*(["'])(fr|en|nl|de)\1|\b(?:formatDate|formatDateLong|formatDateTime|formatCurrency0?|formatPercent|formatNumber|formatList|formatEUR2?|formatPhoneBE|formatRelative|relativeTime)\s*\([^()]*,\s*(["'])(fr|en|nl|de)\3\s*\)/g,
+    why: "Locale figée en argument d'un formatteur: le rendu ne suit plus le segment [locale]. Utiliser la variable `locale` de la page (ou useLocale()).",
+  },
+  {
+    // Liste de locales recopiée dans un composant: la table du projet vit dans lib/locale-detection.
+    id: "locale-list-literal",
+    dirs: RENDER_DIRS,
+    re: /\[\s*(["'])(fr|en|nl|de)\1\s*(?:,\s*(["'])(?:fr|en|nl|de)\3\s*)+\]/g,
+    why: "Liste de locales codée en dur dans un composant: `locales`/`supportedLocales` (lib/locale-detection.ts) est la seule source — une copie silencieuse oublie la langue ajoutée après (c'est ainsi qu'un template `fr` se retrouvait exclu d'un aperçu).",
+  },
+  {
+    id: "intl-tag-in-ui",
+    dirs: RENDER_DIRS,
+    re: /\blocaleToIntl\b/g,
+    allowlist: INTL_TAG_ALLOWLIST,
+    why: "Un composant ne manipule pas de tag Intl: les formatteurs de lib prennent la locale applicative (fr|en|nl|de) et résolvent le tag eux-mêmes. Revenir à `localeToIntl[locale]` réintroduit la divergence de formats.",
   },
   {
     // Les espaces sortis du CLDR du runtime (U+202F côté Node vs U+00A0 côté navigateur)
@@ -142,4 +173,4 @@ if (problems.length) {
   console.error("Patterns corrects: docs/hydration.md\n");
   process.exit(1);
 }
-console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, HTML en cache SW).");
+console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, HTML en cache SW).");

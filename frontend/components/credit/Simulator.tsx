@@ -4,7 +4,6 @@ import { formatEUR, formatEUR2 } from "@/lib/utils";
 import { Button, Badge } from "@/components/ui/Button";
 import { Info, ShieldCheck, Calculator, FileWarning, ArrowRight, Sparkles, AlertTriangle, CheckCircle, XCircle, Eye, FileText, TrendingUp } from "lucide-react";
 import { Locale, t } from "@/lib/i18n";
-import { localeToIntl } from "@/lib/formatters";
 import { simulateCredit, SimulateInput } from "@/lib/credit-engine";
 const products = [
   { key: "PERSONAL", rate: 0.0399, min: 1500, max: 50000, maxTerm: 84, label: { fr: "Personnel", en: "Personal", nl: "Persoonlijk", de: "Privat" } },
@@ -29,10 +28,9 @@ export default function Simulator({ locale }: { locale: Locale }) {
     } catch (e:any) { return { error: e.message } as any; }
   }, [amount, term, income, charges, incomeType, employment, purpose, existing, p.key]);
   const hasError = (result as any).error;
-  // Locale Intl explicite et dérivée du segment [locale]: identique serveur/client
-  // (ni `undefined`, ni "fr-BE" en dur → plus de mismatch de formatage à l'hydratation)
-  const intl = localeToIntl[locale];
-  const eur = (v: number) => formatEUR2(v, intl);
+  // Locale dérivée du segment [locale] et convertie dans lib/ (ni `undefined`, ni "fr-BE" en dur,
+  // ni tag Intl choisi par le composant → plus de mismatch de formatage à l'hydratation).
+  const eur = (v: number) => formatEUR2(v, locale);
   const recoColor = result.recommendation === 'APPROVE_RECOMMENDATION' ? 'bg-emerald-500' : result.recommendation === 'REJECT_RECOMMENDATION' ? 'bg-red-500' : 'bg-amber-500';
   const recoLabel = result.recommendation === 'APPROVE_RECOMMENDATION' ? 'APPROVE' : result.recommendation === 'REJECT_RECOMMENDATION' ? 'REJECT' : 'REVIEW';
   return (
@@ -57,9 +55,9 @@ export default function Simulator({ locale }: { locale: Locale }) {
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-2"><span>{tr("simulator.amount")}</span><span className="text-ink font-extrabold">{formatEUR(amount, intl)}</span></div>
+              <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-2"><span>{tr("simulator.amount")}</span><span className="text-ink font-extrabold">{formatEUR(amount, locale)}</span></div>
               <input type="range" min={p.min} max={p.max} step={p.key==="MORTGAGE"?5000:500} value={amount} onChange={e=>setAmount(Number(e.target.value))} className="w-full accent-primary h-2" />
-              <div className="flex justify-between text-[11px] text-slate-400"><span>{formatEUR(p.min, intl)}</span><span>{formatEUR(p.max, intl)}</span></div>
+              <div className="flex justify-between text-[11px] text-slate-400"><span>{formatEUR(p.min, locale)}</span><span>{formatEUR(p.max, locale)}</span></div>
             </div>
             <div>
               <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-500 mb-2"><span>{tr("simulator.term")}</span><span className="text-ink font-extrabold">{term} mois</span></div>

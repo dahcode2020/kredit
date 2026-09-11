@@ -33,9 +33,10 @@ describe("Intl — normalisation anti-mismatch serveur/client", () => {
   });
 
   it("formatEUR / formatEUR2 (lib/utils) sont normalisés aussi", () => {
+    // Ils ne prennent plus qu'une locale applicative: le tag Intl n'est plus un paramètre libre.
     for (const amount of AMOUNTS) {
-      expect(formatEUR(amount, "fr-BE")).not.toMatch(/\u202F/);
-      expect(formatEUR2(amount, "nl-BE")).not.toMatch(/\u202F/);
+      expect(formatEUR(amount, "fr")).not.toMatch(/\u202F/);
+      expect(formatEUR2(amount, "nl")).not.toMatch(/\u202F/);
     }
   });
 
@@ -50,7 +51,7 @@ describe("Intl — normalisation anti-mismatch serveur/client", () => {
   it("sortie identique que le runtime emploie U+202F ou U+00A0 (cœur du bug corrigé)", () => {
     const RealNumberFormat = Intl.NumberFormat;
     const reference = AMOUNTS.map((a) => formatCurrency(a, "fr"));
-    const referenceEur = AMOUNTS.map((a) => formatEUR2(a, "fr-BE"));
+    const referenceEur = AMOUNTS.map((a) => formatEUR2(a, "fr"));
 
     // Simule un navigateur dont le CLDR utilise déjà U+00A0 comme séparateur de milliers.
     // (proxy sur l'instance : `format` est un getter non inscriptible sur Intl.NumberFormat)
@@ -68,7 +69,7 @@ describe("Intl — normalisation anti-mismatch serveur/client", () => {
     }) as any;
     try {
       expect(AMOUNTS.map((a) => formatCurrency(a, "fr"))).toEqual(reference);
-      expect(AMOUNTS.map((a) => formatEUR2(a, "fr-BE"))).toEqual(referenceEur);
+      expect(AMOUNTS.map((a) => formatEUR2(a, "fr"))).toEqual(referenceEur);
     } finally {
       Intl.NumberFormat = RealNumberFormat;
     }

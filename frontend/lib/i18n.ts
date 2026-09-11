@@ -157,7 +157,7 @@ function flattenWithLegacy(locale: Locale): Record<string,string> {
 }
 
 // --- ICU-like interpolation + plural ---
-function interpolate(template: string, vars?: Record<string, any>, locale: Locale = defaultLocale): string {
+function interpolate(template: string, vars: Record<string, any> | undefined, locale: Locale): string {
   if (!vars) return template;
   // Handle plural: {count, plural, one {# document} other {# documents}}
   let out = template;
@@ -174,10 +174,44 @@ function interpolate(template: string, vars?: Record<string, any>, locale: Local
   return out;
 }
 
+/**
+ * **Source unique** des tags Intl du marché belge. `lib/formatters.ts` la ré-exporte (une copie
+ * par module = la divergence qui a déjà cassé la détection de langue, docs/hydration.md règle 8).
+ * Aucun composant ne doit écrire un tag en dur : les formatteurs prennent la locale applicative
+ * (`fr|en|nl|de`) et résolvent ce tag eux-mêmes — sinon `nl`/`de` se retrouvent formatés à la
+ * française, et le jour où un appelant dérive la locale du segment, serveur et client divergent.
+ */
 export const localeToIntl: Record<Locale, string> = { fr:"fr-BE", en:"en-BE", nl:"nl-BE", de:"de-BE" };
+
+/**
+ * `og:locale` / `og:locale:alternate` : l'énumération du protocole Open Graph est fermée, elle
+ * n'accepte pas `fr_BE` (rejeté par le parseur au scrape) ni `en_BE`/`de_BE`. On bascule donc sur
+ * la variante nationale reconnue, sauf `nl_BE` qui figure bien dans la liste. Le tag de locale
+ * n'est jamais écrit dans une page : il sort de cette table (voir `app/[locale]/layout.tsx`).
+ */
+export const openGraphLocale: Record<Locale, string> = { fr:"fr_FR", en:"en_GB", nl:"nl_BE", de:"de_DE" };
 
 // Direction par locale — à compléter si une locale RTL (ar, he…) est ajoutée.
 export const localeDir: Record<Locale, "ltr" | "rtl"> = { fr:"ltr", en:"ltr", nl:"ltr", de:"ltr" };
+
+/** Nom vernaculaire de la langue, tel qu'affiché par un locuteur de cette langue (sélecteur). */
+export const localeLabels: Record<Locale, string> = { fr:"Français", en:"English", nl:"Nederlands", de:"Deutsch" };
+
+/**
+ * Étiquette technique montrée à côté du nom de langue (sélecteur du header). **Dérivée** de
+ * `localeToIntl` : recopier « FR-BE » dans un composant, c'est exactement la table parallèle qui
+ * finit par diverger de la table réelle.
+ */
+export const localeTagLabel: Record<Locale, string> = Object.fromEntries(
+  locales.map((l) => [l, localeToIntl[l].toUpperCase()])
+) as Record<Locale, string>;
+
+/**
+ * Code `language` attendu par l'API WhatsApp Business (Meta): `en_US` pour l'anglais, sinon le
+ * code nu. Miroir de `backend/src/modules/notifications/channels/whatsapp.channel.ts` — à terme
+ * ces deux listes doivent venir d'un `packages/shared` commun (docs/architecture-technique.md).
+ */
+export const whatsappLocale: Record<Locale, string> = { fr:"fr", en:"en_US", nl:"nl", de:"de" };
 
 // t with namespace:key + vars + locale
 export function t(locale: Locale, key: string, vars?: Record<string, any>): string {

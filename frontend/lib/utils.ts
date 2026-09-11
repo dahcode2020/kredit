@@ -2,18 +2,28 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Decimal from "decimal.js";
 import { normalizeIntlSpaces } from "./intl";
+import { Locale, localeToIntl } from "./i18n";
 
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
 
 export function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
-// Sortie normalisée (lib/intl.ts) : identique côté serveur et côté navigateur, sinon l'espace
-// insécable renvoyé par le CLDR du runtime fait échouer l'hydratation.
-export function formatEUR(amount: number, locale = "fr-BE") {
-  return normalizeIntlSpaces(new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount));
+/**
+ * Monnaies — la locale demandée est la **locale applicative** (`fr|en|nl|de`), jamais un tag Intl:
+ * aucun appelant n'a donc plus le choix d'écrire `"fr-BE"` en dur, et le paramètre n'a plus de
+ * défaut (un défaut « français » faisait rendre `1 500,00 €` à un utilisateur `nl` sans erreur).
+ * `localeToIntl` (lib/i18n.ts) fait la conversion, au même endroit que les formatteurs de
+ * `lib/formatters.ts`. Sortie normalisée (lib/intl.ts) : identique côté serveur et côté
+ * navigateur, sinon l'espace insécable du CLDR du runtime fait échouer l'hydratation.
+ *
+ * @deprecated Préfère `formatCurrency` / `formatCurrency0` de `lib/formatters.ts`, qui appliquent
+ * en plus la devise et les décimales métier. Conservé pour les appels existants.
+ */
+export function formatEUR(amount: number, locale: Locale) {
+  return normalizeIntlSpaces(new Intl.NumberFormat(localeToIntl[locale], { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(amount));
 }
-export function formatEUR2(amount: number, locale = "fr-BE") {
-  return normalizeIntlSpaces(new Intl.NumberFormat(locale, { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount));
+export function formatEUR2(amount: number, locale: Locale) {
+  return normalizeIntlSpaces(new Intl.NumberFormat(localeToIntl[locale], { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount));
 }
 
 // French amortization (constant monthly payment) — Decimal.js HALF_UP, pas de float

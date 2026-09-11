@@ -101,6 +101,35 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
 
     Les données suivent la même règle : `lib/mock.ts` écrit `2026-09-09T14:22:00+02:00`.
 
+11. **Aucun tag ni liste de locale dans `app/` et `components/`.** Huit pages écrivaient
+    `formatEUR2(v, "fr-BE")` (et le layout racine `canonical: "/fr"` + `locale: "fr_BE"`), parce que
+    `formatEUR/formatEUR2` avaient un **défaut** `locale = "fr-BE"` : un utilisateur `nl`, `de` ou
+    `en` recevait du français, sans erreur nulle part. Trois verrous :
+    - les formatteurs de l'app ne prennent **que** la locale applicative (`fr|en|nl|de`) — le
+      paramètre est **obligatoire** et typé `Locale`, donc `formatEUR2(v, "fr-BE")` ne *compile plus* ;
+      la conversion `Locale → tag Intl` a lieu dans `lib/` (`localeToIntl`, source unique, ré-exportée
+      par `lib/formatters.ts`) ;
+    - les tables de noms/étiquettes/codes sont dans `lib/i18n.ts` : `localeToIntl`, `localeLabels`,
+      `localeTagLabel` (dérivée), `openGraphLocale`, `whatsappLocale`. Un composant qui a besoin d'un
+      tag (le sélecteur de langue affiche `FR-BE`) lit la table, il ne recopie pas ;
+    - `scripts/check-hydration.mjs` interdit désormais `locale-tag-literal` (chaîne `"fr-BE"`/`"nl_BE"`
+      dans `app/`+`components/`), `locale-arg-literal` (locale en argument d'un formatteur, dont
+      `t("fr", …)`), `locale-list-literal` (liste `['fr','en','nl','de']` recopiée — c'est ainsi qu'un
+      template `fr` était exclu de son propre aperçu) et `intl-tag-in-ui` (`localeToIntl` importé dans
+      un composant ; seule exception documentée : `components/layout/HtmlLang.tsx`, qui pose
+      `data-intl` hors arbre React).
+
+    Conséquence mesurée au passage (et piégée par un test) : Next **remplace** le bloc `openGraph`
+    entre parent et enfant au lieu de le fusionner — le redéclarer à moitié dans le layout enfant
+    supprimait silencieusement `og:image`, `og:site_name` et `og:type`. Le bloc complet vit donc dans
+    `app/[locale]/layout.tsx`, avec les constantes partagées dans `lib/seo.ts`.
+
+    Ces littéraux n'étaient pas un mismatch en soi — serveur et navigateur affichaient le **même**
+    texte faux — mais la classe exacte de divergence apparaît dès qu'un appelant, lui, dérive la
+    locale du segment (deux formats dans la même page). Le vrai défaut observable était ailleurs :
+    voir §« SEO » de `docs/i18n.md` (canonical croisé sur /en, /nl, /de et `og:locale` refusé par le
+    parseur Open Graph).
+
 ## 3. Vérification
 
 Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :
@@ -108,6 +137,12 @@ Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :
 - `tests/unit/hydration.spec.ts` — aucun espace non normalisé ne sort des formatteurs, et la
   sortie est **identique** que le runtime emploie U+202F ou U+00A0 (le test simule un CLDR de
   navigateur en proxifiant `Intl.NumberFormat`), plus la table de priorité de détection de locale ;
+- `tests/unit/locale-propagation.spec.tsx` — table de tags unique (`localeToIntl` de
+  `lib/formatters` **est** celle de `lib/i18n`, identité d'objet), `openGraphLocale` complet et sans
+  `fr_BE`, `generateMetadata` du layout `[locale]` (canonical/hreflang/og par segment), et **montage
+  réel** de la page Paiements en `fr` puis `nl` pour vérifier que le montant suit la langue de l'URL
+  (et que le HTML serveur reste le skeleton — ces pages client ne mettent pas les montants dans le
+  HTML) ;
 - `tests/unit/dates-timezone.spec.tsx` — `resolveDate` (ancrage UTC, offsets explicites, « jour
   seul », valeur invalide), pureté de `relativeTime` (l'appel échoue si l'horloge est lue), et
   **hydratation réelle** de `<RelativeTime>` : `renderToString` puis `hydrateRoot` dans jsdom,

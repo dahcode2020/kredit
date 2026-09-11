@@ -5,7 +5,9 @@ import { mockPayments } from "@/lib/mock";
 import { formatEUR2 } from "@/lib/utils";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
-  const eur=(v:number)=> formatEUR2(v,"fr-BE");
+  // locale du segment [locale] uniquement: formatEUR2 n'accepte plus un tag Intl, et
+  // n'a plus de défaut « fr-BE » (un utilisateur nl/de recevait du français sans erreur).
+  const eur=(v:number)=> formatEUR2(v, locale);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-4">

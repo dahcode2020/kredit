@@ -1,6 +1,6 @@
 "use client";
 import CustomerShell from "@/components/customer/CustomerShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, locales } from "@/lib/i18n";
 import { useState } from "react";
 import { Check, AlertTriangle, Loader } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
@@ -33,7 +33,7 @@ export default function Page({ params }: { params:{locale:string}}) {
           <label className="text-sm font-semibold">Email<input value={form.email} readOnly className="mt-1 w-full h-11 rounded-xl border px-3 bg-surface"/><span className="text-xs text-emerald-600">✓ Vérifié</span></label>
           <label className="text-sm font-semibold">Langue préférée
             <div className="mt-1 flex gap-2">
-              {['fr','en','nl','de'].map(l=>(
+              {locales.map(l=>(
                 <button key={l} type="button" onClick={()=>setForm({...form, locale:l})} className={`flex-1 h-10 rounded-xl border text-sm font-bold uppercase ${form.locale===l?'bg-ink text-white':'bg-white'}`}>{l}</button>
               ))}
             </div>

@@ -1,10 +1,11 @@
 import { formatEUR, formatEUR2 } from '../../lib/utils';
+import { localeToIntl } from '../../lib/formatters';
 
 describe('i18n — EUR formatting locales BE', () => {
   it('fr-BE 1 234,56 € vs en-BE €1,234.56 structure differente mais 2 décimales', () => {
-    const fr = formatEUR2(1234.56, 'fr-BE');
-    const en = formatEUR2(1234.56, 'en-BE');
-    const nl = formatEUR2(1234.56, 'nl-BE');
+    const fr = formatEUR2(1234.56, 'fr');
+    const en = formatEUR2(1234.56, 'en');
+    const nl = formatEUR2(1234.56, 'nl');
     expect(fr).toContain('€');
     expect(en).toContain('€');
     expect(nl).toContain('€');
@@ -14,11 +15,21 @@ describe('i18n — EUR formatting locales BE', () => {
   });
 
   it('formatEUR zero decimal vs formatEUR2 2 decimals', () => {
-    const z = formatEUR(15000, 'fr-BE');
-    const d = formatEUR2(15000, 'fr-BE');
+    const z = formatEUR(15000, 'fr');
+    const d = formatEUR2(15000, 'fr');
     expect(z).toContain('15');
     expect(d).toContain('15');
     expect(d).toMatch(/,00/);
+  });
+
+  it('la locale applicative change réellement la sortie (verrou du tag en dur)', () => {
+    const out = (['fr', 'en', 'nl', 'de'] as const).map((l) => formatEUR2(1234.56, l));
+    expect(new Set(out).size).toBe(4);
+    // `nl`/`de` ne doivent plus jamais tomber sur le rendu francais (l'ancien `formatEUR2(v, 'fr-BE')`)
+    expect(out[2]).not.toBe(out[0]);
+    expect(out[3]).not.toBe(out[0]);
+    expect(localeToIntl.nl).toBe('nl-BE');
+    expect(localeToIntl.de).toBe('de-BE');
   });
 
   it('Intl.NumberFormat timeZone Europe/Brussels coherente', () => {

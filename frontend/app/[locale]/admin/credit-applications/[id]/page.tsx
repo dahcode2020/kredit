@@ -5,7 +5,7 @@ import { mockAdminApps } from "@/lib/mockAdmin";
 import { useState, useEffect } from "react";
 import { ShieldCheck, AlertTriangle, FileText, Clock, Check, X, Eye } from "lucide-react";
 import { formatEUR2 } from "@/lib/utils";
-import { formatDateTime, localeToIntl } from "@/lib/formatters";
+import { formatDateTime } from "@/lib/formatters";
 export default function Page({ params }: { params:{locale:string, id:string}}) {
   const locale = params.locale as Locale;
   const app = mockAdminApps.find(a=>a.id===params.id) || mockAdminApps[0];
@@ -17,7 +17,7 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
   useEffect(() => {
     if (decided) setDecidedAt(formatDateTime(new Date(), locale));
   }, [decided, locale]);
-  const eur = (v: number) => formatEUR2(v, localeToIntl[locale]);
+  const eur = (v: number) => formatEUR2(v, locale);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="max-w-[1100px] space-y-6">

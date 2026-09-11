@@ -1,6 +1,6 @@
 "use client";
 import CustomerShell from "@/components/customer/CustomerShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, locales } from "@/lib/i18n";
 import { useState } from "react";
 import { Globe, Bell, FileText, Trash2 } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
@@ -13,7 +13,7 @@ export default function Page({ params }: { params:{locale:string}}) {
         <div className="bg-white rounded-2xl border p-6 space-y-4">
           <h3 className="font-bold flex items-center gap-2"><Globe className="w-4 h-4"/> Langue & devise</h3>
           <div className="flex gap-2">
-            {(['fr','en','nl','de'] as const).map(l=>(
+            {locales.map(l=>(
               <button key={l} onClick={()=>setLang(l)} className={`flex-1 h-11 rounded-xl border font-bold uppercase ${lang===l?'bg-ink text-white':'bg-white'}`}>{l}</button>
             ))}
           </div>

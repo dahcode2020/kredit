@@ -1,6 +1,6 @@
 "use client";
 import AdminShell from "@/components/admin/AdminShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, whatsappLocale } from "@/lib/i18n";
 import { useTranslation } from "@/hooks/useTranslation";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import { useState } from "react";
@@ -39,9 +39,11 @@ export default function Page({ params }: { params:{locale:string}}) {
     (q==="" || m.event.toLowerCase().includes(q.toLowerCase()) || m.body.toLowerCase().includes(q.toLowerCase()))
   );
 
-  // Locale de prévisualisation = celle du template, sinon celle de la page (zéro "fr-BE" en dur)
-  const previewLocale: Locale =
-    preview && (["en", "nl", "de"] as string[]).includes(preview.locale) ? (preview.locale as Locale) : locale;
+  // Locale de prévisualisation = celle du template, sinon celle de la page. `Template.locale` est
+  // déjà typé `Locale`: la liste manuelle `["en","nl","de"]` que j'ai trouvée ici oubliait `fr`
+  // (un template français se prévisualisait donc dans la langue de l'admin) — et le code WhatsApp
+  // n'est plus écrit à la main dans le JSX, il sort de `whatsappLocale` (lib/i18n.ts).
+  const previewLocale: Locale = preview?.locale ?? locale;
 
   return (
     <AdminShell locale={locale} role="SUPER_ADMIN">
@@ -110,7 +112,7 @@ export default function Page({ params }: { params:{locale:string}}) {
                 <div><strong>Sujet:</strong> {preview.subject ?? '—'}</div>
                 <div><strong>Body:</strong> {preview.body}</div>
                 <div className="text-xs text-slate-500">Variables: {"{{name}}"} = Alex, {"{{id}}"} = KRD-0842, {"{{amount}}"} = {formatCurrency(15000, previewLocale)}, {"{{monthly}}"} = {formatCurrency(338.62, previewLocale)}, {"{{date}}"} = {formatDate(previewAt || new Date(), previewLocale)}</div>
-                <div className="text-xs text-slate-500">HSM: {preview.hsm ?? '—'} • Locale WhatsApp: {preview.locale==='en'?'en_US':preview.locale}</div>
+                <div className="text-xs text-slate-500">HSM: {preview.hsm ?? '—'} • Locale WhatsApp: {whatsappLocale[previewLocale]}</div>
               </div>
               <div className="flex gap-2 justify-end">
                 <button onClick={()=>{navigator.clipboard.writeText(preview.body); alert("Copié");}} className="h-9 px-4 rounded-full border text-xs font-bold flex items-center gap-1"><Copy className="w-3 h-3"/> Copier</button>

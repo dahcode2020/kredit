@@ -3,18 +3,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, Globe, Shield, ChevronDown, Check, LogOut, LayoutDashboard } from "lucide-react";
 import { buttonClasses } from "@/components/ui/Button";
-import { Locale, locales, t, setPersistedLocale } from "@/lib/i18n";
+import { Locale, locales, localeLabels, localeTagLabel, t, setPersistedLocale } from "@/lib/i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ConnectivityDot } from "@/components/pwa/ConnectivityStatus";
 import { useAuth, useAuthHydrated } from "@/hooks/useAuth";
-
-const localeLabels: Record<Locale, string> = {
-  fr: "Français",
-  en: "English",
-  nl: "Nederlands",
-  de: "Deutsch",
-};
 
 export default function Header({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
@@ -179,7 +172,7 @@ export default function Header({ locale }: { locale: Locale }) {
                   <span className="flex items-center gap-3">
                     <span className={cn("w-8 h-8 rounded-full grid place-items-center text-xs font-extrabold", locale===l ? "bg-ink text-white" : "bg-white/15 text-white")}>{l.toUpperCase()}</span>
                     <span>{localeLabels[l as Locale]}</span>
-                    <span className="text-white/40 font-normal hidden sm:inline text-xs">— {l === "fr" ? "FR-BE" : l === "nl" ? "NL-BE" : l === "de" ? "DE-BE" : "EN-BE"}</span>
+                    <span className="text-white/40 font-normal hidden sm:inline text-xs">— {localeTagLabel[l as Locale]}</span>
                   </span>
                   {locale === l && <Check className="w-4 h-4" />}
                 </button>

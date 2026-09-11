@@ -11,12 +11,11 @@ import { normalizeIntlSpaces } from "./intl";
  *   entre le HTML du serveur et le rendu du navigateur casse l'hydratation.
  */
 
-export const localeToIntl: Record<Locale, string> = {
-  fr: "fr-BE",
-  en: "en-BE",
-  nl: "nl-BE",
-  de: "de-BE",
-};
+// Table des tags Intl déclarée une seule fois dans lib/i18n.ts (avec `Locale`, `localeDir`,
+// `openGraphLocale`) et ré-exportée ici : les appels existants `import { localeToIntl } from
+// "@/lib/formatters"` continuent de marcher, et il n'existe plus qu'une source.
+import { localeToIntl } from "./i18n";
+export { localeToIntl };
 
 export const timeZone = "Europe/Brussels";
 

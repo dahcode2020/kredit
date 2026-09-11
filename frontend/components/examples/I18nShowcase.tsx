@@ -65,7 +65,7 @@ export default function I18nShowcase({ locale }: { locale: Locale }) {
       </div>
 
       <div className="bg-white rounded-2xl border p-5">
-        <h3 className="font-bold text-sm">Formats locaux — {locale} ({locale==='fr'?'fr-BE': locale==='en'?'en-BE': locale==='nl'?'nl-BE':'de-BE'})</h3>
+        <h3 className="font-bold text-sm">Formats locaux — {locale} </h3>
         <table className="w-full text-xs mt-2">
           <tbody className="divide-y">
             <tr><td className="py-2 font-bold">Date</td><td>{formatDate(date, locale)}</td><td className="text-slate-500">Intl.DateTimeFormat</td></tr>

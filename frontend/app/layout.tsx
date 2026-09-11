@@ -1,5 +1,6 @@
 import "./globals.css";
 import SWRegister from "@/components/pwa/SWRegister";
+import { SITE_ORIGIN } from "@/lib/seo";
 
 export const metadata = {
   title: {
@@ -10,23 +11,18 @@ export const metadata = {
   applicationName: "KREDIT",
   manifest: "/manifest.json",
   keywords: ["crédit", "Belgique", "investissement", "TAEG", "KREDIT", "PWA", "fintech", "EUR"],
-  authors: [{ name: "KREDIT", url: "https://kredit.be" }],
+  authors: [{ name: "KREDIT", url: SITE_ORIGIN }],
   creator: "KREDIT",
   publisher: "KREDIT",
-  metadataBase: new URL("https://kredit.be"),
-  alternates: {
-    canonical: "/fr",
-    languages: { fr: "/fr", en: "/en", nl: "/nl", de: "/de" },
-  },
-  openGraph: {
-    title: "KREDIT — Crédit & Investissement (BE)",
-    description: "Simulation indicative, décision humaine, audit immuable. PWA installable.",
-    url: "https://kredit.be/fr",
-    siteName: "KREDIT",
-    locale: "fr_BE",
-    type: "website",
-    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "KREDIT" }],
-  },
+  metadataBase: new URL(SITE_ORIGIN),
+  // NB: `alternates` (canonical + hreflang) et le bloc `openGraph` sont délibérément absents d'ici.
+  // (1) Ce layout ne reçoit pas les params du segment [locale] (vérifié en Next 14.2) : une valeur
+  // écrite ici s'appliquait aux QUATRE langues — canonical `…/fr` sur /en, /nl et /de (trois langues
+  // de fait écartées de l'index) et `og:locale fr_BE`, valeur refusée par le parseur Open Graph
+  // (hors énumération). (2) Next ne fusionne pas `openGraph` entre parent et enfant : redéclarer le
+  // bloc à moitié dans `app/[locale]/layout.tsx` faisait disparaître `og:image`, `og:site_name` et
+  // `og:type`. Le bloc complet vit donc chez l'enfant, avec les constantes partagées de `lib/seo.ts`.
+  // `og:title`/`og:description` retombent sur `title` et `description` ci-dessus (comportement Next).
   twitter: {
     card: "summary_large_image",
     title: "KREDIT — Plateforme Européenne",

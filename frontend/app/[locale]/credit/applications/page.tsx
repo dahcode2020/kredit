@@ -10,7 +10,7 @@ export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
   const [filter, setFilter] = useState("ALL");
   const [loading, setLoading] = useState(false);
-  const eur = (v:number)=> formatEUR2(v, "fr-BE");
+  const eur = (v:number)=> formatEUR2(v, locale);
   const filtered = filter==="ALL"? mockApps : mockApps.filter(a=>a.status===filter);
   const onFilter=(f:string)=>{ setLoading(true); setTimeout(()=>{setFilter(f); setLoading(false)},400); };
   return (
