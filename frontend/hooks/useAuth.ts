@@ -1,6 +1,7 @@
 "use client";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { useEffect, useState } from "react";
 
 type User = { id: string; email: string; role: "CUSTOMER" | "ADMIN" | "SUPER_ADMIN"; locale: string; firstName?: string; lastName?: string };
 type AuthState = {
@@ -65,7 +66,10 @@ export const useAuth = create<AuthState>()(
         } as any;
       }),
       partialize: (state) => ({ user: state.user, accessToken: state.accessToken, refreshToken: state.refreshToken }),
+      // Important: skipHydration évite le mismatch SSR/CSR où le client aurait déjà user != null au premier render
+      skipHydration: true,
       onRehydrateStorage: () => (state) => {
+        // appelé après rehydrate (sync pour localStorage), marque comme hydraté
         state?.setHasHydrated(true);
         // sync legacy keys for api.client that reads localStorage directly
         try {
@@ -81,9 +85,23 @@ export const useAuth = create<AuthState>()(
 );
 
 // Helper for components that need to wait hydration before deciding auth
+// isAuthenticated est false tant que hasHydrated === false → évite hydration mismatch (server pulse vs client pill)
 export function useAuthHydrated() {
   const hasHydrated = useAuth((s) => s._hasHydrated);
   const user = useAuth((s) => s.user);
   const token = useAuth((s) => s.accessToken);
-  return { hasHydrated, isAuthenticated: !!user && !!token, user, token };
+  useEffect(() => {
+    if (!hasHydrated) {
+      // @ts-ignore persist exists
+      useAuth.persist.rehydrate();
+    }
+  }, [hasHydrated]);
+  return { hasHydrated, isAuthenticated: hasHydrated && !!user && !!token, user, token };
+}
+
+// Hook générique pour éviter hydration mismatch sur tout contenu client-only
+export function useHasMounted() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted;
 }
