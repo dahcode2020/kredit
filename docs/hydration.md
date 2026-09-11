@@ -62,7 +62,15 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
    `<Link>` lui-même (`app/[locale]/page.tsx`, `components/layout/Header.tsx`).
    Détecté par `node scripts/check-dom-nesting.mjs` (inclus dans `npm run check:hydration`).
 
-8. **Le service worker ne doit jamais servir un document HTML périmé.** Le SW precachait
+8. **Une seule source pour la détection de locale.** `middleware.ts` et `lib/i18n.ts`
+   contenaient chacun leur copie de `parseAcceptLanguage` + leur liste de locales : deux
+   implémentations qui divergent = une langue choisie côté edge/serveur et une autre côté client
+   → tous les textes traduits mismatchent. Tout passe désormais par `lib/locale-detection.ts`
+   (sans dépendance à `next/server` ni au DOM : exécutable en Edge, en Node et en navigateur,
+   et testable en unit). Le cookie `NEXT_LOCALE` y a aussi une seule définition d'attributs
+   (`SameSite=Lax`, 1 an, `Secure` dès que le contexte est HTTPS).
+
+9. **Le service worker ne doit jamais servir un document HTML périmé.** Le SW precachait
    `/`, `/fr`, `/en`, `/nl`, `/de` et écrivait les réponses de navigation en cache : après un
    déploiement, le navigateur recevait l'ancien HTML avec les nouveaux chunks → hydratation
    cassée, et le cache ne se purgeait que si `VERSION` était bumpé à la main.
@@ -73,8 +81,16 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
 
 ## 3. Vérification
 
+Verrous permanents dans la suite Jest (`npm --prefix frontend test`, fichier
+`tests/unit/hydration.spec.ts`) : aucun espace non normalisé ne sort des formatteurs, et la
+sortie est **identique** que le runtime emploie U+202F ou U+00A0 (le test simule un CLDR de
+navigateur en proxifiant `Intl.NumberFormat`), plus la table de priorité de détection de locale.
+Contrôle fait pendant la correction : normalisation neutralée → 4 de ces tests échouent.
+
 ```bash
 cd frontend
+npm run lint                     # eslint-config-next + react/no-unescaped-entities (voir .eslintrc.json)
+npm test                         # verrous Jest (tests/unit/hydration.spec.ts)
 npm run check:hydration          # garde-fous statiques (zéro dépendance) : APIs au render + imbrications HTML
 npx next build                   # le prerender de toutes les pages [locale] casse si un render touche une API navigateur
 ```

@@ -162,7 +162,7 @@ export default function Simulator({ locale }: { locale: Locale }) {
               </div>
             </>
           ) : (
-            <div className="text-sm text-white/70">Corrige les paramètres pour voir l'échéancier.</div>
+            <div className="text-sm text-white/70">Corrige les paramètres pour voir l&#39;échéancier.</div>
           )}
           <div className="mt-4 flex gap-2 text-[11px]"><span className="px-2 py-1 rounded-full bg-white text-ink font-bold">BE • EUR</span><span className="px-2 py-1 rounded-full bg-white/10 border border-white/10">Configurable</span></div>
         </div>

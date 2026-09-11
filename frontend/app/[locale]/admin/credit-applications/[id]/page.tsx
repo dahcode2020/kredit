@@ -102,7 +102,7 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
                       <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
                         <div className="text-xs font-bold text-amber-800">Règles non satisfaites: max_debt_ratio 38.4% &gt; 33% (valeur 0.384 seuil 0.33)</div>
                         <textarea value={exception} onChange={e=>setException(e.target.value)} placeholder="Motif obligatoire 20-2000 chars (ex: Client historique 10 ans, garanties...)" rows={3} className="w-full rounded-xl border px-3 py-2 text-sm"/>
-                        <label className="flex gap-2 text-xs"><input type="checkbox" required/> J'ai vérifié les règles ci-dessus</label>
+                        <label className="flex gap-2 text-xs"><input type="checkbox" required/> J&#39;ai vérifié les règles ci-dessus</label>
                         <button onClick={()=>{ if(exception.trim().length<20) return alert('Motif 20-2000 requis'); if(app.amount>50000) alert('SUPER_ADMIN requis >50k — 403 si ADMIN'); setDecided('APPROVED_WITH_EXCEPTION'); }} className="w-full h-9 rounded-full bg-amber-600 text-white text-sm font-bold">Confirmer exception</button>
                         <p className="text-[11px] text-amber-700">Enregistre admin, date/heure, règles, valeurs, motif, décision → history.metadata + audit hash.</p>
                       </div>

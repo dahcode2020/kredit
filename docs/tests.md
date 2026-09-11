@@ -75,6 +75,18 @@ expect(totalCost).toBe(round(monthly*n+fees));
 - `tests/unit/kyc.spec.ts` — AdminManualProvider, mock-aml, fraud velocity
 - `tests/unit/payment.idempotency.spec.ts` — même key → même Payment, 409 si payload diff
 - `frontend/tests/unit/pwa-cache.test.ts` — strategies STATIC/PUBLIC/AUTH/FINANCIAL non-cache
+
+**Frontend — `frontend/jest.config.js`** (`ts-jest`, `testEnvironment: jsdom`, TZ `Europe/Brussels`)
+
+- `tests/unit/amortize.precision.spec.ts` — mensualités Decimal HALF_UP, solde final forcé à 0
+- `tests/unit/i18n.money.spec.ts` — `formatEUR`/`formatEUR2` fr-BE / en-BE / nl-BE
+- `tests/unit/hydration.spec.ts` — **verrous anti-hydratation** : sorties Intl sans espace
+  non normalisé, identité U+202F ↔ U+00A0 (CLDR simulé), dates à fuseau forcé, et hiérarchie de
+  détection de locale (`lib/locale-detection.ts`) partagée avec le middleware
+- `tests/pwa/cache-strategies.spec.ts` — stratégies déclaratives + manifest
+- `tests/a11y/axe.spec.ts` — invariants a11y statiques (landmarks, palette)
+- garde-fous hors Jest : `npm run check:hydration` (APIs au render + imbrications HTML) et
+  `npm run check:hydrate` (hydratation réelle via jsdom, option `--skew-intl`)
 - `frontend/tests/unit/i18n.test.ts` — t('fr', 'hero.title') + fr-BE override
 
 **Commande** : `npm run test:unit` → `jest --testPathPattern='tests/unit|__tests__' --coverage`

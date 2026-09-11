@@ -41,7 +41,7 @@ export default function SuperPage(){
                 <input value={taeg} onChange={e=>setTaeg(e.target.value)} className="h-10 rounded-xl border px-3 text-sm w-32" placeholder="TAEG"/>
                 <button onClick={()=> alert(`Taux mis à jour à ${taeg}% — en prod: INSERT product_rates (effective_from=now) + audit`)} className="h-10 px-5 rounded-full bg-ink text-white text-sm font-bold">Publier nouveau taux</button>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2">Versioning: ancien taux conservé (effective_to = now -1s). Pas d'écrasement.</p>
+              <p className="text-[11px] text-slate-400 mt-2">Versioning: ancien taux conservé (effective_to = now -1s). Pas d&#39;écrasement.</p>
             </div>
 
             <div className="bg-white rounded-2xl border p-6">

@@ -20,7 +20,7 @@ export default function I18nShowcase({ locale }: { locale: Locale }) {
   return (
     <div className="space-y-6 max-w-[900px]">
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-        Zéro texte en dur — tout via <code className="bg-white px-1 rounded">t(locale, "ns:key")</code> • persistance cookie <code>NEXT_LOCALE</code> 1y • fr-BE override
+        Zéro texte en dur — tout via <code className="bg-white px-1 rounded">t(locale, &#34;ns:key&#34;)</code> • persistance cookie <code>NEXT_LOCALE</code> 1y • fr-BE override
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

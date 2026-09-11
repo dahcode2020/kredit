@@ -385,7 +385,7 @@ export default function Page({ params }: { params: { locale: string } }) {
             </div>
             <label className="text-sm font-semibold text-ink mt-4 block">Sujet<input className="mt-1 w-full h-11 rounded-xl border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Simulation, KYC, ..."/></label>
             <label className="text-sm font-semibold text-ink mt-4 block">Message<textarea required rows={5} className="mt-1 w-full rounded-xl border px-3 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="Décrivez votre projet..."/><span className="text-[11px] text-slate-400">Aucune donnée sensible (numéro national) via ce formulaire.</span></label>
-            <label className="flex gap-2 mt-4 text-xs text-slate-600"><input type="checkbox" required className="mt-0.5"/> J'accepte la politique de confidentialité et le traitement RGPD (UE).</label>
+            <label className="flex gap-2 mt-4 text-xs text-slate-600"><input type="checkbox" required className="mt-0.5"/> J&#39;accepte la politique de confidentialité et le traitement RGPD (UE).</label>
             <Button type="submit" className="w-full mt-4">Envoyer le message</Button>
             <p className="text-[11px] text-slate-400 text-center mt-3">Réponse humaine — pas de décision auto par ce formulaire.</p>
           </form>

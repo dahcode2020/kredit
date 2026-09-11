@@ -10,7 +10,10 @@ module.exports = {
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  globals: { 'ts-jest': { tsconfig: { jsx: 'react-jsx', esModuleInterop: true, allowSyntheticDefaultImports: true } } },
+  transform: {
+    // Config ts-jest modern (le bloc `globals: { 'ts-jest': … }` est déprécié)
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { jsx: 'react-jsx', esModuleInterop: true, allowSyntheticDefaultImports: true } }],
+  },
   collectCoverageFrom: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}', '!**/*.d.ts'],
   testPathIgnorePatterns: ['<rootDir>/.next/', '<rootDir>/node_modules/'],
 };

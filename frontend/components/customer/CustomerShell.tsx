@@ -125,7 +125,7 @@ export default function CustomerShell({ locale, children }: { locale: Locale; ch
             </nav>
             <div className="p-3 border-t">
               <div className="bg-primary-light rounded-xl p-3">
-                <div className="text-xs font-bold text-ink">Besoin d'aide ?</div>
+                <div className="text-xs font-bold text-ink">Besoin d&#39;aide ?</div>
                 <div className="text-xs text-slate-600">Un ADMIN humain répond &lt;24h</div>
                 <Link href={`${base}/#contact`} className="mt-2 inline-flex h-8 px-3 rounded-full bg-ink text-white text-xs font-bold items-center">Contacter</Link>
               </div>

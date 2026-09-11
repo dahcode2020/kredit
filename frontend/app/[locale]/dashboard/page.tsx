@@ -16,7 +16,7 @@ export default function Page({ params }: { params:{locale:string}}) {
       <div className="space-y-6">
         <div>
           <h1 className="text-[24px] font-extrabold text-ink">Résumé financier</h1>
-          <p className="text-sm text-slate-500">Vue d'ensemble — simulation ≠ offre, décision humaine</p>
+          <p className="text-sm text-slate-500">Vue d&#39;ensemble — simulation ≠ offre, décision humaine</p>
         </div>
 
         {/* stats */}

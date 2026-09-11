@@ -47,14 +47,31 @@ import deLegal from "@/i18n/de/legal.json";
 import frBEOverride from "@/i18n/fr/fr-BE.json";
 
 // Legacy flat (hero etc.) — kept for compat, merged as namespace "common" fallback
+import {
+  supportedLocales,
+  defaultLocale as sharedDefaultLocale,
+  parseAcceptLanguage as sharedParseAcceptLanguage,
+  detectLocale as sharedDetectLocale,
+  cookieFromHeader,
+  isSupportedLocale,
+  LOCALE_COOKIE,
+  LOCALE_STORAGE_KEY,
+  LOCALE_COOKIE_MAX_AGE,
+  localeCookieAttrs,
+  type SupportedLocale,
+} from "./locale-detection";
+
 import frLegacy from "@/i18n/fr.json";
 import enLegacy from "@/i18n/en.json";
 import nlLegacy from "@/i18n/nl.json";
 import deLegacy from "@/i18n/de.json";
 
-export const locales = ["fr", "en", "nl", "de"] as const;
-export type Locale = typeof locales[number];
-export const defaultLocale: Locale = "fr";
+// Sources uniques: locales / défaut / cookie / storage viennent de lib/locale-detection,
+// utilisé aussi par middleware.ts et les hooks. Deux listes qui divergent = deux locales
+// choisies (serveur vs client) = mismatch d'hydratation sur toute la page.
+export const locales = supportedLocales;
+export type Locale = SupportedLocale;
+export const defaultLocale: Locale = sharedDefaultLocale;
 
 export const namespaces = ["common","auth","dashboard","credit","investment","payments","documents","notifications","admin","errors","legal"] as const;
 export type Namespace = typeof namespaces[number];
@@ -192,19 +209,9 @@ export function tNs(locale: Locale, ns: Namespace, key: string, vars?: Record<st
   return t(locale, `${ns}:${key}`, vars);
 }
 
-// --- Detection hierarchy ---
-export function parseAcceptLanguage(header: string): Locale | null {
-  if (!header) return null;
-  const parts = header.split(",").map(s => {
-    const [lang, qStr] = s.trim().split(";q=");
-    const q = qStr ? parseFloat(qStr) : 1;
-    const base = lang.toLowerCase().split("-")[0];
-    return { base, q };
-  }).sort((a,b)=> b.q - a.q);
-  for (const p of parts) {
-    if ((locales as readonly string[]).includes(p.base)) return p.base as Locale;
-  }
-  return null;
+// --- Détection (implémentation partagée avec middleware.ts) ---
+export function parseAcceptLanguage(header: string | null | undefined): Locale | null {
+  return sharedParseAcceptLanguage(header);
 }
 
 export function detectLocale(opts: {
@@ -212,30 +219,16 @@ export function detectLocale(opts: {
   jwtLocale?: string | null,
   storedLocale?: string | null,
   acceptLanguage?: string | null,
-  navigatorLanguages?: readonly string[]
+  navigatorLanguages?: readonly string[],
+  pathname?: string | null
 }): Locale {
-  // 1. préférence utilisateur (cookie > jwt > localStorage)
-  const candidates = [opts.cookieLocale, opts.jwtLocale, opts.storedLocale].map(v=> v?.toLowerCase().split("-")[0]);
-  for (const c of candidates) if (c && (locales as readonly string[]).includes(c)) return c as Locale;
-  // 2. navigateur
-  if (opts.navigatorLanguages) {
-    for (const nav of opts.navigatorLanguages) {
-      const base = nav.toLowerCase().split("-")[0];
-      if ((locales as readonly string[]).includes(base)) return base as Locale;
-    }
-  }
-  if (opts.acceptLanguage) {
-    const parsed = parseAcceptLanguage(opts.acceptLanguage);
-    if (parsed) return parsed;
-  }
-  // 3. défaut
-  return defaultLocale;
+  return sharedDetectLocale(opts);
 }
 
 // --- Persistence ---
-export const STORAGE_KEY = "kredit-locale";
-export const COOKIE_NAME = "NEXT_LOCALE";
-export const COOKIE_MAX_AGE = 31536000; // 1y
+export const STORAGE_KEY = LOCALE_STORAGE_KEY;
+export const COOKIE_NAME = LOCALE_COOKIE;
+export const COOKIE_MAX_AGE = LOCALE_COOKIE_MAX_AGE; // 1y
 
 // ⚠️ À appeler uniquement dans un effect / un handler (jamais pendant un render):
 // ces API sont absentes du serveur et peuvent lever (Safari privé, cookies désactivés).
@@ -246,8 +239,8 @@ export function getPersistedLocale(): Locale | null {
     if (stored && (locales as readonly string[]).includes(stored)) return stored as Locale;
   } catch {} // Storage access refused (private mode / bloque)
   try {
-    const match = document.cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
-    if (match && (locales as readonly string[]).includes(match[1])) return match[1] as Locale;
+    const fromCookie = cookieFromHeader(document.cookie, COOKIE_NAME);
+    if (isSupportedLocale(fromCookie)) return fromCookie as Locale;
   } catch {}
   return null;
 }
@@ -258,7 +251,7 @@ export function setPersistedLocale(locale: Locale) {
     window.localStorage.setItem(STORAGE_KEY, locale);
   } catch {}
   try {
-    document.cookie = `${COOKIE_NAME}=${locale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    document.cookie = `${COOKIE_NAME}=${locale}; ${localeCookieAttrs(window.location.protocol === "https:")}`;
   } catch {}
   // also PATCH /api/v1/customers/me {locale} if authenticated — caller handles
 }
