@@ -1,15 +1,19 @@
 "use client";
 import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { useConnectivity } from "@/hooks/useConnectivity";
+import { useTranslation } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 
 export default function ConnectivityStatus({ className }: { className?: string }) {
   const { state } = useConnectivity();
+  const { t } = useTranslation("common");
 
+  // Pastille vue dans le header de TOUTES les pages: sa copie vient des dictionnaires (locale du
+  // segment [locale], résolue par useLocale → identique serveur/premier rendu client).
   const cfg = {
-    ONLINE: { icon: Wifi, label: "En ligne", sub: "Connecté au serveur", color: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
-    OFFLINE: { icon: WifiOff, label: "Hors ligne", sub: "Fonctionnalités limitées", color: "bg-red-500", bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
-    SYNCING: { icon: RefreshCw, label: "Synchronisation", sub: "Reconnexion…", color: "bg-amber-500", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+    ONLINE: { icon: Wifi, label: t("pwa.online"), sub: t("pwa.onlineSub"), color: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
+    OFFLINE: { icon: WifiOff, label: t("pwa.offline"), sub: t("pwa.offlineSub"), color: "bg-red-500", bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
+    SYNCING: { icon: RefreshCw, label: t("pwa.syncing"), sub: t("pwa.syncingSub"), color: "bg-amber-500", bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
   }[state];
 
   const Icon = cfg.icon;
@@ -18,7 +22,7 @@ export default function ConnectivityStatus({ className }: { className?: string }
     <div
       role="status"
       aria-live="polite"
-      aria-label={`État connexion: ${cfg.label}`}
+      aria-label={t("pwa.stateAria", { state: cfg.label })}
       className={cn("inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full border text-xs font-semibold", cfg.bg, cfg.text, cfg.border, className)}
     >
       <span className="relative flex">
@@ -36,8 +40,9 @@ export default function ConnectivityStatus({ className }: { className?: string }
 // Compact variant for header
 export function ConnectivityDot() {
   const { state } = useConnectivity();
+  const { t } = useTranslation("common");
   const color = state === "ONLINE" ? "bg-emerald-500" : state === "OFFLINE" ? "bg-red-500" : "bg-amber-500";
-  const title = state === "ONLINE" ? "En ligne — connecté au serveur" : state === "OFFLINE" ? "Hors ligne — données financières non disponibles" : "Synchronisation en cours";
+  const title = state === "ONLINE" ? t("pwa.onlineDot") : state === "OFFLINE" ? t("pwa.offlineDot") : t("pwa.syncingDot");
   return (
     <span title={title} aria-label={title} className="inline-flex items-center gap-1.5">
       <span className={cn("w-2 h-2 rounded-full", color, state === "SYNCING" && "animate-pulse")} />

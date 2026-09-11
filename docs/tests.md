@@ -242,6 +242,16 @@ test('landing a11y', async ({page}) => {
 ```
 
 - **Checks** : `landmark (header/main/footer/nav)`, `skip-link` focusable, `aria-live` connectivity `ONLINE/OFFLINE`, `alt` icons, contrast AA (ink #0F1115/white, primary #FF4A17), `keyboard` Tab → focus `ring-primary`, `prefers-reduced-motion`, `lang` per locale `fr-BE`
+- **Réécrit en passe 9** (`frontend/tests/a11y/axe.spec.ts`) : les sept tests étaient tautologiques — ils
+  déclaraient eux-mêmes l'objet à vérifier (`const skipLink = { href: '#main-content' }` puis
+  `expect(skipLink.href).toBe('#main-content')`) et ne pouvaient donc pas échouer. Ils lisent maintenant les
+  sources réelles : `<a href="#main">` doit exister **une seule fois**, dans `app/[locale]/layout.tsx`, avant
+  `<Header>`, avec un libellé issu des quatre dictionnaires ; `role`/`aria-live` sont vérifiés dans les
+  composants PWA ; le ratio de contraste est **calculé** (WCAG 2.1) à partir de `tailwind.config.js`, et non
+  plus recopié dans le test ; `<html lang>` est contrôlé via `HtmlLangScript`/`HtmlLang` parce que le layout
+  racine ne connaît pas la locale. Le premier contrôle honnête a immédiatement trouvé deux défauts : l'ancre
+  était `#main` (le test mentait sur `#main-content`) et le skip-link du layout racine était en français sur
+  les quatre marchés.
 
 **Seuil** : `0 violations`, Lighthouse a11y >95, `eslint-plugin-jsx-a11y` en CI.
 

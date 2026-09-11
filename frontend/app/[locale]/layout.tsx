@@ -74,6 +74,11 @@ export default function LocaleLayout({ children, params }: { children: React.Rea
       {/* <html lang>/<dir>: corrigé au parsing (chargement complet) puis à chaque navigation (HtmlLang) */}
       <HtmlLangScript locale={locale} />
       <HtmlLang locale={locale} />
+      {/* Skip-link : premier nœud focusable du document, donc avant l'en-tête. Son libellé vient du
+          dictionnaire (il était en dur dans `app/layout.tsx`, français sur les quatre marchés). */}
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-ink text-white px-4 py-2 rounded-full z-[100]">
+        {t(locale, "common:shell.skipToContent")}
+      </a>
       <Header locale={locale} />
       {/* Connectivity status — ONLINE / OFFLINE / SYNCING (valeur client-only résolue en effect) */}
       <div className="fixed top-[72px] inset-x-0 z-40 pointer-events-none">

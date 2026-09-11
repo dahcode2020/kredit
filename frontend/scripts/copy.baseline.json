@@ -20,17 +20,11 @@
   "app/[locale]/investments/[id]/page.tsx": 2,
   "app/[locale]/investments/page.tsx": 2,
   "app/[locale]/not-found.tsx": 1,
-  "app/[locale]/offline/page.tsx": 9,
   "app/[locale]/profile/page.tsx": 5,
   "app/[locale]/security/page.tsx": 2,
   "app/[locale]/settings/page.tsx": 4,
   "app/[locale]/super/page.tsx": 9,
   "components/credit/Simulator.tsx": 5,
   "components/examples/I18nShowcase.tsx": 2,
-  "components/layout/Footer.tsx": 3,
-  "components/pwa/ConnectivityStatus.tsx": 3,
-  "components/pwa/InstallPrompt.tsx": 2,
-  "components/pwa/OfflineNotice.tsx": 4,
-  "components/pwa/PushManager.tsx": 8,
-  "components/pwa/UpdatePrompt.tsx": 2
+  "components/layout/Footer.tsx": 3
 }

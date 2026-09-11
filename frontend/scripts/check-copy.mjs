@@ -13,8 +13,11 @@
  *
  * Pourquoi les coquilles sont à 0 (`FLOOR_DIRS`) : `components/customer/*` et `components/admin/*`
  * enveloppent toutes les pages métier. Leur copie était en dur → un utilisateur `nl` avait une page
- * traduite dans un menu français. Ces deux répertoires sont donc **interdits** de copie en dur, pas
- * budgétés.
+ * traduite dans un menu français. `components/pwa/*` y est aussi : ces bannières (hors ligne, install,
+ * mise à jour, push) sont rendues dans le layout de **toutes** les pages, dont les routes live-SDK et
+ * la page de repli servie par le service worker — c'est-à-dire précisément quand l'utilisateur est le
+ * moins bien connecté et le plus susceptible de ne pas parler français. Ces répertoires sont donc
+ * **interdits** de copie en dur, pas budgétés.
  *
  * Heuristique (délibérément conservatrice) : une « ligne de copie » = une ligne de JSX (hors commentaire)
  * contenant du texte visible de ≥ 2 mots avec au moins un caractère accentué, ou un littéral de chaîne
@@ -28,7 +31,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const BASELINE = join(ROOT, "scripts", "copy.baseline.json");
 const SCAN_DIRS = ["app", "components", "features"];
-const FLOOR_DIRS = ["components/customer", "components/admin"];
+const FLOOR_DIRS = ["components/customer", "components/admin", "components/pwa"];
 /**
  * Fichiers passés à zéro, maintenus à zéro (règle dure, pas de budget). La page d'accueil y est
  * depuis que toute sa copie est dans les dictionnaires : son texte est rendu **côté serveur** dans la
@@ -36,7 +39,7 @@ const FLOOR_DIRS = ["components/customer", "components/admin"];
  * des trois autres langues (index, partages, SEO) — contrairement au reste des pages, invisible
  * jusqu'à l'hydratation.
  */
-const FLOOR_FILES = ["app/[locale]/page.tsx"];
+const FLOOR_FILES = ["app/[locale]/page.tsx", "app/[locale]/offline/page.tsx", "app/layout.tsx"];
 
 const ACCENTUE = /[éèêëàâäçîïôöûùüœ]/i;
 const BRUIT = /(className|style=|href=|src=|url\(|\bpx-|\bpy-|\bmt-|\bmb-|rounded|bg-[a-z]|\btext-(xs|sm|base|lg|xl|\[)|grid|flex|w-\d|h-\d|min-|max-|border|shadow|animate|tracking-|leading-|opacity|pointer-events|select-none|place-items|divide-|sticky|inset|z-\d|overflow|hover:|focus:|disabled:|last:|sm:|md:|lg:)/;
@@ -61,8 +64,26 @@ const clean = (line) => line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
 /** Lignes de copie française d'un fichier. */
 function copie(texte) {
   const hits = [];
+  // Les blocs de documentation sont écrits en français (c'est la langue de travail du projet) et ne
+  // sont jamais rendus : sans cette machine à états, une phrase de JSDoc est comptée comme copie
+  // d'interface — et le premier qui rencontre le faux positif désactive le contrôle.
+  let dansBloc = false;
   texte.split("\n").forEach((raw, i) => {
-    const line = clean(raw);
+    let line = raw;
+    if (dansBloc) {
+      const fin = line.indexOf("*/");
+      if (fin === -1) return;
+      line = line.slice(fin + 2);
+      dansBloc = false;
+    }
+    for (;;) {
+      const debut = line.indexOf("/*");
+      if (debut === -1) break;
+      const fin = line.indexOf("*/", debut + 2);
+      if (fin === -1) { line = line.slice(0, debut); dansBloc = true; break; }
+      line = line.slice(0, debut) + " " + line.slice(fin + 2);
+    }
+    line = clean(line);
     if (!line.trim()) return;
     const candidats = [
       ...[...line.matchAll(/>([^<>{}\n]{3,})</g)].map((m) => m[1]),      // texte JSX
@@ -81,6 +102,62 @@ function copie(texte) {
     if (ok) hits.push({ line: i + 1, texte: ok.replace(/\s+/g, " ").trim().slice(0, 78) });
   });
   return hits;
+}
+
+/**
+ * Filet supplémentaire, **sans budget** : une chaîne accentuée en position de *défaut de paramètre*
+ * (`function CTA({ label = "Voir le détail" })`). Le compteur de copie exige ≥ 2 mots, donc un défaut
+ * d'un seul mot français lui passe sous le nez — et c'est justement le piège le plus rentable : le
+ * défaut s'affiche dès qu'un appelant omet la prop, sur les quatre marchés à la fois, et il ne peut pas
+ * être corrigé par le dictionnaire puisque la valeur est dans la signature. Vu deux fois dans
+ * `components/pwa` (`actionLabel = "Opération"`, `label = "Réessayer"`).
+ */
+/**
+ * Filet supplémentaire, **sans budget** : une chaîne accentuée en position de *défaut de prop*
+ * (`function CTA({ label = "Voir le détail" })`). Le compteur de copie exige ≥ 2 mots, donc un défaut
+ * d'un seul mot français lui passe sous le nez — et c'est justement le piège le plus rentable : le
+ * défaut s'affiche dès qu'un appelant omet la prop, sur les quatre marchés à la fois, et il ne peut pas
+ * être corrigé par le dictionnaire puisque la valeur est écrite dans la signature. Vu deux fois dans
+ * `components/pwa` (`actionLabel = "Opération"`, `label = "Réessayer"`).
+ *
+ * On ne scanne QUE des listes de paramètres de composants (`function Nom({ … })`, `const Nom = ({ … })`,
+ * ou un paramètre simple `function Nom(strategy = "FINANCIAL_DATA")`) : élargir aux attributs JSX
+ * ferait matcher `aria-label="…"`, déjà traité par le budget, et le message perdrait sa précision.
+ */
+const ACCENTUE_I18N = /[éèêëàâäçîïôöûùüœ]/i;
+const SIGNATURES = [
+  /\bfunction\s+[A-Za-z_$][\w$]*\s*\(([^)]*)\)/g,      // function Composant({ a = "x", b })
+  /\b[A-Za-z_$][\w$]*\s*=\s*\(([^)]*)\)\s*(?::[^=]*)?=>/g, // const Composant = ({ a = "x" }): JSX => …
+];
+const DEFAUT = /\b([A-Za-z_$][\w$]*)\s*=\s*"([^"]*)"/g;
+
+function defautsDeProp(_fichier, texte) {
+  const out = [];
+  const lignes = texte.split("\n");
+  const vus = new Set();
+  lignes.forEach((raw, i) => {
+    // Une signature s'écrit rarement sur une ligne: on recolle les lignes jusqu'à fermer la parenthèse.
+    let bloc = raw;
+    for (let j = i; j < Math.min(i + 6, lignes.length) && (bloc.match(/\(/g) || []).length > (bloc.match(/\)/g) || []).length; j++) {
+      bloc = bloc + " " + lignes[j + 1];
+    }
+    for (const re of SIGNATURES) {
+      re.lastIndex = 0;
+      let m;
+      while ((m = re.exec(bloc))) {
+        DEFAUT.lastIndex = 0;
+        let d;
+        while ((d = DEFAUT.exec(m[1]))) {
+          if (!ACCENTUE_I18N.test(d[2])) continue;
+          const cle = `${i}:${d[1]}`;
+          if (vus.has(cle)) continue;
+          vus.add(cle);
+          out.push({ line: i + 1, prop: d[1], texte: d[2] });
+        }
+      }
+    }
+  });
+  return out;
 }
 
 const rapport = () => {
@@ -130,10 +207,26 @@ if (args.includes("--report")) {
   const tri = [...rel.entries()].sort((a, b) => b[1].length - a[1].length);
   for (const [f, hits] of tri.slice(0, 20)) console.log(`${String(hits.length).padStart(3)}  ${f}`);
   console.log(`total: ${[...rel.values()].reduce((a, h) => a + h.length, 0)} ligne(s) dans ${rel.size} fichier(s)`);
+  const defs = [];
+  for (const dir of SCAN_DIRS) for (const f of fichiers(dir)) {
+    for (const d of defautsDeProp(relative(ROOT, f).split("\\").join("/"), readFileSync(f, "utf8"))) defs.push(1);
+  }
+  console.log(`défauts de prop en français: ${defs.length} (règle dure)`);
   process.exit(0);
 }
 
 const erreurs = [];
+
+// Défauts de props en français: règle dure, hors budget (un mot seulement ne passe pas le compteur).
+const defs = [];
+for (const dir of SCAN_DIRS) {
+  for (const f of fichiers(dir)) {
+    const relNom = relative(ROOT, f).split("\\").join("/");
+    for (const d of defautsDeProp(relNom, readFileSync(f, "utf8"))) {
+      defs.push(`${relNom}:${d.line}  ${d.prop} = "${d.texte}"`);
+    }
+  }
+}
 
 for (const [f, hits] of rel) {
   const plancher = budgetDe(f);
@@ -154,9 +247,21 @@ for (const f of Object.keys(budget)) {
 if (erreurs.length) {
   console.error(`\n✖ copie non traduite au-dessus du budget (${erreurs.length} fichier(s)):\n`);
   console.error(erreurs.join("\n\n"));
+  // Les deux règles partagent la même sortie: n'afficher que la première ferait disparaître la seconde
+  // du message, et l'on passerait une correction sous le nez en croyant avoir tout lu.
+  if (defs.length) {
+    console.error(`\n… et ${defs.length} défaut(s) de prop en français (règle dure, hors budget):`);
+    console.error(defs.map((d) => `    ${d}`).join("\n"));
+  }
   console.error(`\nLes répertoires ${FLOOR_DIRS.join(", ")} (coquilles vues par les 4 langues) sont à zéro.`);
   console.error("Traduire = ajouter la clé dans les 4 dictionnaires (`i18n/{fr,en,nl,de}/*.json`) puis `t(locale, \"ns:cle\")`.");
   console.error("Après une traduction: `node scripts/check-copy.mjs --update` (le budget ne peut que baisser).\n");
+  process.exit(1);
+}
+if (defs.length) {
+  console.error(`\n✖ ${defs.length} défaut(s) de prop en français (règle dure, aucun budget possible):`);
+  console.error(defs.map((d) => `    ${d}`).join("\n"));
+  console.error("\nUn défaut écrit dans la signature ne peut pas être traduit: passez la prop optionnelle et resolvez la valeur avec `t(\"…\")` dans le corps.\n");
   process.exit(1);
 }
 console.log(`✔ check-copy: aucune copie française nouvelle (budget par fichier respecté, coquilles et ${FLOOR_FILES.length} fichier(s) à zéro).`);

@@ -70,7 +70,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body className="bg-white text-ink antialiased font-body">
-        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-ink text-white px-4 py-2 rounded-full z-[100]">Aller au contenu</a>
+        {/* Pas de skip-link ici : son libellé est de la copie à traduire, et ce layout ne connaît pas
+            le segment [locale] (params === {}). « Aller au contenu » en dur se retrouvait donc en
+            français sur /en, /nl et /de — dans le tout premier nœud focusable du document, lu par les
+            lecteurs d'écran avant même l'en-tête. Il vit dans `app/[locale]/layout.tsx`. */}
         {children}
         <SWRegister />
       </body>

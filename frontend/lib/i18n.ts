@@ -53,7 +53,7 @@ import {
   parseAcceptLanguage as sharedParseAcceptLanguage,
   detectLocale as sharedDetectLocale,
   cookieFromHeader,
-  isSupportedLocale,
+  isSupportedLocale as sharedIsSupportedLocale,
   LOCALE_COOKIE,
   LOCALE_STORAGE_KEY,
   LOCALE_COOKIE_MAX_AGE,
@@ -72,6 +72,13 @@ import deLegacy from "@/i18n/de.json";
 export const locales = supportedLocales;
 export type Locale = SupportedLocale;
 export const defaultLocale: Locale = sharedDefaultLocale;
+/**
+ * Garde de validation d'un tag de locale. Ré-exportée ici (et non importée du module voisin par les
+ * pages) pour que `@/lib/i18n` reste la façade unique : une page qui accepte n'importe quelle valeur
+ * de `params.locale` retombe sur le français en dur, et le « fallback fr » écrit dans le composant est
+ * le jour où un lien `/xx/...` sert une langue au hasard (cf. `app/[locale]/offline/page.tsx`).
+ */
+export const isSupportedLocale = (value: unknown): value is Locale => sharedIsSupportedLocale(value as string);
 
 export const namespaces = ["common","auth","dashboard","credit","investment","payments","documents","notifications","admin","errors","legal"] as const;
 export type Namespace = typeof namespaces[number];

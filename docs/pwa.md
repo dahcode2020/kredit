@@ -280,3 +280,26 @@ Contraintes appliquées dans `frontend/public/sw.js` :
 
 Ce fichier est vérifié hors CI par `npm --prefix frontend run check:hydration`, qui interdit
 les documents HTML dans `PRECACHE_URLS`. Voir aussi `docs/hydration.md`.
+
+---
+
+## 15. Copie des composants PWA — localisée, et interdite de français en dur
+
+Les cinq composants de `components/pwa/` (pastille de connexion, bandeau hors ligne, invite d'installation,
+mise à jour du service worker, notifications push) sont rendus par `app/[locale]/layout.tsx` sur **toutes**
+les pages, dont la page de repli `/[locale]/offline` servie par le service worker. Leur copie tient
+entièrement dans les dictionnaires (`common:pwa.*`, 41 clés × 4 langues) et le répertoire est sous **règle
+dure** dans `scripts/check-copy.mjs` (`FLOOR_DIRS`), comme les coquilles client et admin : zéro ligne de
+français en dur, aucun budget résiduel.
+
+Deux règles sorties de ce chapitre :
+
+- **Aucun défaut de prop textuel.** `{ actionLabel = "Opération" }` est une chaîne française que le
+  dictionnaire ne peut pas corriger : la prop est optionnelle et sa valeur par défaut sort de
+  `t("pwa.operation")`. C'est le seul cas où `check-copy` refuse une chaîne d'un seul mot.
+- **`CACHE_STRATEGIES` ne parle pas à l'utilisateur.** `description`, `docs` et `clientSide` de `lib/pwa.ts`
+  restent en français : documentation développeur, module importé par le middleware (bundle edge), et
+  l'interface n'affiche que l'identifiant de stratégie. Un composant ne propage pas ces champs dans le DOM.
+
+Vérification : `tests/unit/pwa-chrome-i18n.spec.tsx` (montage jsdom des quatre marchés, `renderToString` de la
+page offline) et `npm run check:copy` en statique.

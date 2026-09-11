@@ -142,6 +142,35 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
     voir §« SEO » de `docs/i18n.md` (canonical croisé sur /en, /nl, /de et `og:locale` refusé par le
     parseur Open Graph).
 
+### 11. Une chaîne en dur dans une zone rendue sur les quatre marchés, c'est aussi du HTML serveur
+
+`app/layout.tsx` et `components/pwa/*` sont rendus pour **toutes** les pages, dans la langue du segment
+pour les seconds, sans aucune locale disponible pour le premier. Leur texte atterrit dans le HTML de
+`/fr`, `/en`, `/nl` **et** `/de`, avec les mêmes contraintes que la règle 10 — et l'`aria-label` de la
+pastille de connexion est comparé par les tests d'accessibilité. Les bannières PWA sont donc passées en
+`FLOOR_DIRS` dans `scripts/check-copy.mjs` (compteur à zéro), `app/layout.tsx` en `FLOOR_FILES`.
+
+Les bannières PWA (`components/pwa/*`) sont montées par le layout de toutes les pages : leur texte
+atterrit dans le HTML de `/fr`, `/en`, `/nl` **et** `/de`, avec les mêmes contraintes que la règle 10 — et
+l'`aria-label` de la pastille de connexion est comparé par les tests d'accessibilité. Le répertoire est donc
+passé en `FLOOR_DIRS` dans `scripts/check-copy.mjs` (compteur à zéro), comme les coquilles client et admin.
+
+La variante la plus vicieuse, repérée deux fois ici, n'est pas du tout du JSX : `{ actionLabel = "Opération" }`
+et `{ label = "Réessayer" }` sont des **défauts de paramètres**. Une seule phrase, donc hors du champ de
+l'heuristique de copie (qui exige deux mots), et surtout intraduisible par dictionnaire puisque la valeur
+est écrite dans la signature : elle s'affiche dès qu'un appelant omet la prop, sur les quatre marchés. La
+forme correcte est une prop optionnelle résolue dans le corps (`label ?? t("pwa.retry")`), et
+`check-copy.mjs` refuse désormais toute chaîne accentuée en position de défaut de paramètre. Deux réglages
+de mesure, tous deux indispensables : le compteur **ignore les blocs `/** … */`** (la documentation du projet
+est en français et n'est jamais rendue — un faux positif appris, c'est un contrôle désactivé), et il ne peut
+rien sur un libellé **sans** accent : « Aller au contenu » lui échappe par construction. D'où la règle dure
+ajoutée à `scripts/check-hydration.mjs`, `skip-link-in-root-layout` — la première à cibler un fichier précis
+(option `only`) — parce que le skip-link du layout racine était à la fois français et dédoublé :
+`tests/a11y/axe.spec.ts`, réécrit pour lire les sources au lieu de s'auto-vérifier, contrôle qu'il n'existe
+**qu'un seul** `href="#main"`, rendu par `app/[locale]/layout.tsx` avec `common:shell.skipToContent`.
+
+---
+
 ## 3. Vérification
 
 Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :
@@ -160,6 +189,15 @@ Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :
   **hydratation réelle** de `<RelativeTime>` : `renderToString` puis `hydrateRoot` dans jsdom,
   avec `onRecoverableError` + écoute de `console.error` (un écart de texte ferait échouer le test).
 
+- `tests/unit/pwa-chrome-i18n.spec.tsx` — le chrome du layout (pastille de connexion, bandeaux hors ligne /
+  sync, notifications push, `RetryButton`, `ServerRequiredNotice`) monté en jsdom pour les quatre marchés :
+  le texte rendu **doit** être la valeur du dictionnaire de la locale et non la valeur française, plus
+  `renderToString` de `/[locale]/offline`, dont le HTML part à l'index et aux partages ;
+- `npm run check:copy` — budget décroissant de copie française en dur, avec deux règles dures : les
+  répertoires vus par les quatre langues (`components/customer`, `components/admin`, `components/pwa`) et
+  les pages rendues côté serveur (`app/[locale]/page.tsx`, `app/[locale]/offline/page.tsx`) sont à zéro, et
+  **aucun** défaut de prop textuel n'est toléré nulle part (cf. règle 11).
+
 Le fuseau du processus de test est épinglé par `tests/global-setup.js` (`TZ=Europe/Brussels`) :
 sinon un CI en UTC rendrait indétectable le retour d'un parse « à la locale ».
 
@@ -169,6 +207,7 @@ npm run lint                     # eslint-config-next + react/no-unescaped-entit
 npm test                         # verrous Jest (tests/unit/hydration.spec.ts)
 npm run check:hydration          # garde-fous statiques (zéro dépendance) : APIs au render, dates
                                  # sans décalage, temps relatif au render, imbrications HTML
+npm run check:copy               # copie française en dur (budget + règles dures), sans dépendance
 npx next build                   # le prerender de toutes les pages [locale] casse si un render touche une API navigateur
 ```
 

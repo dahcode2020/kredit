@@ -125,7 +125,7 @@ export default function Header({ locale }: { locale: Locale }) {
               <div className="flex items-center gap-2 pl-3 pr-1 h-8 rounded-full bg-white border border-slate-200">
                 <span className="hidden xl:inline text-[12px] font-bold text-ink max-w-[140px] truncate" title={user.email}>{user.email}</span>
                 <span className="hidden xl:inline px-1.5 py-0.5 rounded-full bg-ink text-white text-[10px] font-bold tracking-widest uppercase">{user.role === "SUPER_ADMIN" ? "SUPER" : user.role}</span>
-                <button onClick={handleLogout} aria-label="Déconnexion" className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 grid place-items-center text-slate-600">
+                <button onClick={handleLogout} aria-label={tr("shell.logout")} title={tr("shell.logout")} className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 grid place-items-center text-slate-600">
                   <LogOut className="w-3 h-3" />
                 </button>
               </div>

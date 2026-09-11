@@ -120,6 +120,17 @@ const RULES = [
     why: "formatRelative() lit Date.now() à l'appel: à remplacer par <RelativeTime date locale now /> (composant) ou relativeTime(date, now, locale) avec un `now` fourni par le serveur.",
   },
   {
+    // Le skip-link est le tout premier nœud focusable du document : son libellé est lu avant l'en-tête,
+    // et « aller au contenu » ne porte aucun accent — donc invisible au budget de copie. `app/layout.tsx`
+    // ne reçoit pas les params du segment [locale] (params === {} en Next 14) : tout texte qu'il rend est
+    // figé en français pour les quatre marchés, sans aucun moyen de le traduire depuis ce fichier.
+    id: "skip-link-in-root-layout",
+    dirs: ["app"],
+    only: "app/layout.tsx",
+    re: /href="#main"/g,
+    why: "Copie rendue par le layout racine = non traduisible (il ne connaît pas la locale du segment). Déplacer dans app/[locale]/layout.tsx avec t(locale, \"common:shell.skipToContent\").",
+  },
+  {
     id: "hydration-bandaid",
     dirs: RENDER_DIRS,
     re: /suppressHydrationWarning/g,
@@ -160,6 +171,7 @@ for (const dir of ALL_DIRS) {
     const src = stripComments(readFileSync(file, "utf8"));
     for (const rule of RULES) {
       if (!rule.dirs.some((d) => rel === d || rel.startsWith(`${d}/`))) continue;
+      if (rule.only && rel !== rule.only) continue; // règle ciblant un fichier précis, pas un répertoire
       rule.re.lastIndex = 0;
       let m;
       while ((m = rule.re.exec(src))) {
