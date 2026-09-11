@@ -90,6 +90,9 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   valeur invalide → chaîne vide et non `RangeError`), pureté de `relativeTime` (échoue dès que
   l'horloge est lue au calcul), et **hydratation** de `<RelativeTime>` : `renderToString` →
   `hydrateRoot` en écoutant `console.error` + `onRecoverableError`
+- `tests/unit/i18n-keys-usage.spec.ts` — balayage du code (app/components/features/hooks/lib) : toute
+  chaîne en pointes qui se résout comme clé i18n doit se résoudre dans les quatre langues, et ne doit
+  pas rester identique au français (exceptions partagées dans `tests/unit/translation-exceptions.ts`)
 - `tests/unit/shell-i18n.spec.tsx` — coquilles customer/admin montées pour les 4 locales : navigation,
   écrans d'accès, bandeau MFA et alertes viennent du dictionnaire, aucune chaîne française ne subsiste
   hors `fr`, et le premier rendu (skeleton) est **identique** quelle que soit la locale (rien à hydrater)

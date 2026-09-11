@@ -126,7 +126,7 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
       S'ajoute `scripts/check-copy.mjs` (`npm run check:copy`, dans `npm run check`) : budget de copie
       française par fichier — **zéro** dans `components/customer/**` et `components/admin/**`, qui
       enveloppent toutes les pages métier (leur nav en dur rendait le menu français sur /nl et /de),
-      et compteur figé ailleurs, donc non croissant. Détail inattendu relevé au passage : ces coquilles
+      et compteur figé ailleurs, donc non croissant — `app/[locale]/page.tsx`, elle, est en règle dure (`FLOOR_FILES`) parce que son texte est rendu côté serveur dans la langue du segment : une chaîne en dur y partirait littéralement dans le HTML des trois autres langues (et dans l'index). Détail inattendu relevé au passage : ces coquilles
       rendent un skeleton tant que le store `persist` n'a pas parlé, donc le HTML serveur ne contient
       aucune copie — un test fige cette égalité (`shell-i18n.spec.tsx`) pour qu'on n'aille pas « corriger »
       ce qui n'a jamais cassé l'hydratation.

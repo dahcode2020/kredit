@@ -21,7 +21,6 @@
   "app/[locale]/investments/page.tsx": 2,
   "app/[locale]/not-found.tsx": 1,
   "app/[locale]/offline/page.tsx": 9,
-  "app/[locale]/page.tsx": 51,
   "app/[locale]/profile/page.tsx": 5,
   "app/[locale]/security/page.tsx": 2,
   "app/[locale]/settings/page.tsx": 4,

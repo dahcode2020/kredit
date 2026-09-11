@@ -29,6 +29,14 @@ const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const BASELINE = join(ROOT, "scripts", "copy.baseline.json");
 const SCAN_DIRS = ["app", "components", "features"];
 const FLOOR_DIRS = ["components/customer", "components/admin"];
+/**
+ * Fichiers passés à zéro, maintenus à zéro (règle dure, pas de budget). La page d'accueil y est
+ * depuis que toute sa copie est dans les dictionnaires : son texte est rendu **côté serveur** dans la
+ * langue du segment, donc une chaîne qui y repasserait en dur se retrouve littéralement dans le HTML
+ * des trois autres langues (index, partages, SEO) — contrairement au reste des pages, invisible
+ * jusqu'à l'hydratation.
+ */
+const FLOOR_FILES = ["app/[locale]/page.tsx"];
 
 const ACCENTUE = /[éèêëàâäçîïôöûùüœ]/i;
 const BRUIT = /(className|style=|href=|src=|url\(|\bpx-|\bpy-|\bmt-|\bmb-|rounded|bg-[a-z]|\btext-(xs|sm|base|lg|xl|\[)|grid|flex|w-\d|h-\d|min-|max-|border|shadow|animate|tracking-|leading-|opacity|pointer-events|select-none|place-items|divide-|sticky|inset|z-\d|overflow|hover:|focus:|disabled:|last:|sm:|md:|lg:)/;
@@ -86,12 +94,33 @@ const rapport = () => {
   return par;
 };
 
+const budget = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8")) : {};
+const budgetDe = (f) => (FLOOR_DIRS.some((d) => f.startsWith(d + "/")) || FLOOR_FILES.includes(f) ? 0 : (budget[f] ?? 0));
+
 const args = process.argv.slice(2);
 const rel = rapport();
 
+// `--show <fichier>`: liste les lignes comptées, sans faire échouer le build. Indispensable pour
+// savoir ce qui RESTE à traduire dans un fichier donné (le budget dit « combien », pas « quoi »).
+const showIdx = args.indexOf("--show");
+if (showIdx > -1) {
+  const cible = args[showIdx + 1];
+  const trouvee = [...rel.entries()].filter(([f]) => !cible || f.includes(cible));
+  if (!trouvee.length) { console.log(`aucune copie française comptée pour ${cible ?? "(aucun filtre)"}`); process.exit(0); }
+  for (const [f, hits] of trouvee) {
+    console.log(`\n${f} — ${hits.length} ligne(s) [budget ${budgetDe(f)}]`);
+    for (const h of hits) console.log(`  ${String(h.line).padStart(4)}: ${h.texte}`);
+  }
+  process.exit(0);
+}
+
 if (args.includes("--update")) {
   const out = {};
-  for (const dir of SCAN_DIRS) for (const [f, hits] of rel) if (f.startsWith(dir + "/")) out[f] = hits.length;
+  for (const dir of SCAN_DIRS) for (const [f, hits] of rel) {
+    if (!f.startsWith(dir + "/")) continue;
+    if (FLOOR_FILES.includes(f) && !hits.length) continue; // zéro durable: pas la peine d'encombrer le budget
+    out[f] = hits.length;
+  }
   writeFileSync(BASELINE, JSON.stringify(out, null, 2) + "\n");
   console.log(`✔ copy.baseline.json écrit: ${Object.keys(out).length} fichier(s), ${[...rel.values()].reduce((a, h) => a + h.length, 0)} ligne(s) de copie non traduite.`);
   process.exit(0);
@@ -104,11 +133,10 @@ if (args.includes("--report")) {
   process.exit(0);
 }
 
-const budget = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, "utf8")) : {};
 const erreurs = [];
 
 for (const [f, hits] of rel) {
-  const plancher = FLOOR_DIRS.some((d) => f.startsWith(d + "/")) ? 0 : (budget[f] ?? 0);
+  const plancher = budgetDe(f);
   if (hits.length > plancher) {
     erreurs.push(
       `${f}: ${hits.length} ligne(s) de copie française pour un budget de ${plancher}\n` +
@@ -131,4 +159,4 @@ if (erreurs.length) {
   console.error("Après une traduction: `node scripts/check-copy.mjs --update` (le budget ne peut que baisser).\n");
   process.exit(1);
 }
-console.log("✔ check-copy: aucune copie française nouvelle (budget par fichier respecté, coquilles à zéro).");
+console.log(`✔ check-copy: aucune copie française nouvelle (budget par fichier respecté, coquilles et ${FLOOR_FILES.length} fichier(s) à zéro).`);

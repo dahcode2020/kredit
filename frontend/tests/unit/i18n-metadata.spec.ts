@@ -8,6 +8,7 @@
  * et le manifeste généré suit la locale demandée.
  */
 import { readFileSync, readdirSync } from "fs";
+import { estPartagee } from "./translation-exceptions";
 import { join } from "path";
 import { locales, t } from "@/lib/i18n";
 import { buildManifest, pwaShortcuts } from "@/lib/pwa-manifest";
@@ -37,8 +38,7 @@ const DICTS = Object.fromEntries(LANGS.map((l) => [l, dict(l)])) as Record<Lang,
 const dictAvecOverride = (lang: Lang) => dict(lang, true);
 const PLACEHOLDERS = /\{(\w+)(?:,\s*(plural|select|number|date))?/g;
 const ACCENTS = /[éèêëàâäçîïôöûùüœ]/i;
-/** Seule valeur qui DOIT rester identique dans les quatre langues : l'endonyme de la langue. */
-const ENONYM_KEYS = new Set(["common:language.fr"]);
+/** Endonymes et toponymes: les seules valeurs admises identiques dans plusieurs langues (liste partagée). */
 
 describe("dictionnaires — parité des quatre langues", () => {
   it("les mêmes clés partout (hors override fr-BE)", () => {
@@ -75,7 +75,7 @@ describe("dictionnaires — parité des quatre langues", () => {
     for (const key of Object.keys(DICTS.fr)) {
       if (!ACCENTS.test(DICTS.fr[key])) continue; // sans accent, indistinguable d'un loanword
       for (const lang of LANGS) {
-        if (lang === "fr" || ENONYM_KEYS.has(key)) continue;
+        if (lang === "fr" || estPartagee(key)) continue;
         if (DICTS[lang][key] === DICTS.fr[key]) offenders.push(`${lang} → ${key}`);
       }
     }
