@@ -1,101 +1,117 @@
 "use client";
-import { Badge } from "@/components/ui/Button";
+import CustomerShell from "@/components/customer/CustomerShell";
 import { Locale } from "@/lib/i18n";
-import { FileText, Clock, ShieldCheck, CreditCard, TrendingUp, Upload, Bell, Eye, ArrowRight, AlertTriangle } from "lucide-react";
+import { mockApps, mockPayments, mockInvestments, mockNotifs, mockDocs } from "@/lib/mock";
 import { formatEUR2 } from "@/lib/utils";
-const apps = [
-  { id: "KRD-2026-0842", product: "Personnel • BE", amount: 15000, term: 48, status: "PENDING_REVIEW", scoring: "B — Recommandé APPROVE", monthly: 338.84, taeg: 0.0399 },
-  { id: "KRD-2026-0831", product: "Hypothécaire • BE", amount: 285000, term: 240, status: "MORE_INFO_REQUESTED", scoring: "C — Docs manquants", monthly: 1612.11, taeg: 0.0325 },
-  { id: "KRD-2026-0799", product: "Investissement • BE", amount: 10000, term: 60, status: "DECIDED_APPROVED", scoring: "A", monthly: 184.02, taeg: 0.041 },
-];
-const statusMap: Record<string, { label: string; color: string }> = {
-  PENDING_REVIEW: { label: "En revue humaine", color: "bg-amber-100 text-amber-700 border-amber-200" },
-  MORE_INFO_REQUESTED: { label: "Infos demandées", color: "bg-blue-100 text-blue-700 border-blue-200" },
-  DECIDED_APPROVED: { label: "Approuvé", color: "bg-emerald-100 text-emerald-700 border-emerald-200" },
-};
+import { ArrowRight, Clock, CreditCard, FileText, TrendingUp, AlertTriangle, Bell, Wallet } from "lucide-react";
+import Link from "next/link";
 
-export default function Dashboard({ params }: { params: { locale: string } }) {
+export default function Page({ params }: { params:{locale:string}}) {
+  const locale = params.locale as Locale;
+  const eur = (v:number)=> formatEUR2(v, locale==="fr"?"fr-BE":"en-BE");
+  const active = mockApps.filter(a=>a.status==="DISBURSED");
+  const next = mockPayments.find(p=>p.status==="PENDING");
   return (
-    <div className="min-h-screen bg-surface">
-      <div className="mx-auto max-w-[1280px] px-6 py-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <Badge>Customer • Espace client</Badge>
-            <h1 className="text-[28px] font-extrabold text-ink mt-2">Bonjour, Alex — vos dossiers</h1>
-            <p className="text-sm text-slate-500">Simulation ≠ offre • Décision humaine obligatoire • Audit complet</p>
-          </div>
-          <div className="flex gap-2">
-            <span className="px-3 py-2 rounded-full bg-white border text-xs font-bold flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-emerald-500"/> KYC Vérifié</span>
-            <span className="px-3 py-2 rounded-full bg-white border text-xs font-bold flex items-center gap-2"><Bell className="w-4 h-4"/> 3 notifs</span>
-          </div>
+    <CustomerShell locale={locale}>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-[24px] font-extrabold text-ink">Résumé financier</h1>
+          <p className="text-sm text-slate-500">Vue d'ensemble — simulation ≠ offre, décision humaine</p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mt-6">
-          <div className="bg-white rounded-2xl border p-5">
+        {/* stats */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-2xl border p-5 shadow-soft">
             <div className="text-xs tracking-widest uppercase font-bold text-slate-500">Encours total</div>
-            <div className="text-2xl font-extrabold text-ink mt-1">{formatEUR2(310000, "fr-BE")}</div>
-            <div className="text-xs text-slate-400">2 crédits actifs</div>
+            <div className="text-2xl font-extrabold text-ink mt-1">{eur(310000)}</div>
+            <div className="text-xs text-slate-400">{active.length} crédits actifs • BE • EUR</div>
           </div>
-          <div className="bg-white rounded-2xl border p-5">
+          <div className="bg-white rounded-2xl border p-5 shadow-soft">
             <div className="text-xs tracking-widest uppercase font-bold text-slate-500">Prochaine échéance</div>
-            <div className="text-2xl font-extrabold text-ink mt-1">{formatEUR2(338.84, "fr-BE")}</div>
-            <div className="text-xs text-emerald-600">12 sept. 2026 • SEPA</div>
+            <div className="text-2xl font-extrabold text-ink mt-1">{next? eur(next.amount) : "-"}</div>
+            <div className="text-xs text-emerald-600 flex items-center gap-1"><Clock className="w-3 h-3"/>{next?.date} • SEPA {next?.psp}</div>
           </div>
-          <div className="bg-white rounded-2xl border p-5">
-            <div className="text-xs tracking-widest uppercase font-bold text-slate-500">Score interne</div>
-            <div className="text-2xl font-extrabold text-ink mt-1">Grade B</div>
-            <div className="text-xs text-slate-400">Endettement 28% — sous plafond 33%</div>
+          <div className="bg-white rounded-2xl border p-5 shadow-soft">
+            <div className="text-xs tracking-widest uppercase font-bold text-slate-500">Capacité résiduelle</div>
+            <div className="text-2xl font-extrabold text-ink mt-1">{eur(1780)}</div>
+            <div className="text-xs text-slate-400">Après charges + mensualités</div>
           </div>
         </div>
 
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 text-sm">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-          <div><strong className="text-amber-900">Action requise:</strong> votre dossier <span className="font-mono">KRD-2026-0831</span> attend une preuve de revenus. <button className="text-primary font-bold underline ml-1">Déposer maintenant <Upload className="inline w-3 h-3"/></button></div>
+        {/* shortcut */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            {label:"Nouvelle simulation", href:"credit/simulator", icon: Wallet, color:"bg-ink text-white"},
+            {label:"Reprendre DRAFT", href:"credit/applications", icon: FileText, color:"bg-white border"},
+            {label:"Déposer doc", href:"credit/documents", icon: FileText, color:"bg-white border"},
+            {label:"Voir échéancier", href:"credit/repayments", icon: CreditCard, color:"bg-white border"},
+          ].map(c=>(
+            <Link key={c.label} href={`/${locale}/${c.href}`} className={`rounded-2xl p-4 flex items-center gap-3 ${c.color}`}>
+              <c.icon className="w-5 h-5"/><span className="text-sm font-bold">{c.label}</span>
+            </Link>
+          ))}
         </div>
 
-        <div className="mt-6 bg-white rounded-[20px] border shadow-soft overflow-hidden">
-          <div className="px-6 py-4 border-b flex items-center justify-between">
-            <h2 className="font-bold text-ink flex items-center gap-2"><FileText className="w-4 h-4"/> Mes demandes</h2>
-            <a href="/fr#simulateur" className="text-xs font-bold tracking-widest uppercase text-primary flex items-center gap-1">Nouvelle demande <ArrowRight className="w-3 h-3"/></a>
+        {/* demandes */}
+        <div className="bg-white rounded-2xl border shadow-soft overflow-hidden">
+          <div className="px-5 py-4 border-b flex justify-between items-center">
+            <h2 className="font-bold text-ink">Demandes de crédit</h2>
+            <Link href={`/${locale}/credit/applications`} className="text-xs font-bold tracking-widest uppercase text-primary flex items-center gap-1">Tout voir <ArrowRight className="w-3 h-3"/></Link>
           </div>
           <div className="divide-y">
-            {apps.map(a=>(
-              <div key={a.id} className="px-6 py-5 flex flex-wrap items-center justify-between gap-4 hover:bg-surface/50">
+            {mockApps.slice(0,3).map(a=>(
+              <div key={a.id} className="px-5 py-4 flex flex-wrap justify-between gap-3 hover:bg-surface/50">
                 <div>
-                  <div className="flex items-center gap-2"><span className="font-mono text-xs font-bold bg-ink text-white px-2 py-1 rounded">{a.id}</span><span className="text-xs font-bold tracking-widest uppercase text-slate-500">{a.product}</span><span className={`px-2.5 py-1 rounded-full border text-xs font-bold ${statusMap[a.status].color}`}>{statusMap[a.status].label}</span></div>
-                  <div className="mt-1 text-sm text-ink"><strong>{formatEUR2(a.amount,"fr-BE")}</strong> • {a.term} mois • {formatEUR2(a.monthly,"fr-BE")}/mois • TAEG {(a.taeg*100).toFixed(2)}%</div>
-                  <div className="text-xs text-slate-500">Scoring: {a.scoring} • Recommandation ≠ décision finale</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-mono text-xs font-bold bg-ink text-white px-2 py-1 rounded">{a.id}</span>
+                    <span className="text-xs font-bold tracking-widest uppercase text-slate-500">{a.product}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold border ${a.status==='DISBURSED'?'bg-emerald-50 text-emerald-700 border-emerald-200': a.status==='DRAFT'?'bg-slate-50 text-slate-600 border-slate-200': a.status==='MORE_INFORMATION_REQUIRED'?'bg-amber-50 text-amber-700 border-amber-200':'bg-blue-50 text-blue-700 border-blue-200'}`}>{a.status}</span>
+                  </div>
+                  <div className="text-sm text-ink mt-1"><strong>{eur(a.amount)}</strong> • {a.term}m • {eur(a.monthly)}/m • {a.taeg}%</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button className="h-9 px-4 rounded-full border text-xs font-bold flex items-center gap-1"><Eye className="w-3.5 h-3.5"/> Voir</button>
-                  <button className="h-9 px-4 rounded-full bg-ink text-white text-xs font-bold flex items-center gap-1"><CreditCard className="w-3.5 h-3.5"/> Échéancier</button>
-                </div>
+                <Link href={`/${locale}/credit/applications/${a.id}`} className="self-center h-9 px-4 rounded-full border text-xs font-bold flex items-center gap-1">Voir <ArrowRight className="w-3 h-3"/></Link>
               </div>
             ))}
           </div>
+          {/* empty state example */}
+          {mockApps.length===0 && <div className="p-10 text-center text-sm text-slate-500">Aucune demande — <Link href={`/${locale}/credit/simulator`} className="text-primary font-bold underline">Simuler</Link></div>}
         </div>
 
-        <div className="mt-6 grid md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-2xl border p-6">
-            <h3 className="font-bold text-ink flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary"/> Investissements (aperçu)</h3>
-            <p className="text-xs text-slate-500 mt-1">Fonds Article 8 • Risque 3/7 • Perte en capital possible</p>
-            <div className="mt-4 space-y-3">
-              <div className="flex justify-between text-sm"><span>BE Green Bond 2031</span><span className="font-bold">5 000€ • +2,1% YTD</span></div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full w-[64%] bg-emerald-500"/></div>
-              <p className="text-[11px] text-slate-400">Quiz adéquation passé le 08/09/2026 — profil Équilibré. MiFID-like configurable.</p>
-            </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl border p-5">
+            <h3 className="font-bold text-ink flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary"/> Investissements</h3>
+            {mockInvestments.map(inv=>(
+              <div key={inv.id} className="mt-3 flex justify-between p-3 rounded-xl bg-surface border">
+                <div><div className="text-sm font-bold">{inv.name}</div><div className="text-xs text-slate-500">Risque {inv.risk}/7 • {inv.type}</div></div>
+                <div className="text-right"><div className="text-sm font-bold">{eur(inv.amount)}</div><div className="text-xs text-emerald-600">{inv.perf}</div></div>
+              </div>
+            ))}
+            <Link href={`/${locale}/investments`} className="mt-3 inline-flex text-xs font-bold text-primary">Portefeuille →</Link>
           </div>
-          <div className="bg-white rounded-2xl border p-6">
-            <h3 className="font-bold text-ink flex items-center gap-2"><Clock className="w-4 h-4 text-primary"/> Timeline — KRD-2026-0842</h3>
-            <ol className="mt-4 space-y-2 text-sm">
-              <li className="flex gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2"/><span><strong>DRAFT</strong> créé 10/09 09:12 — idempotency OK</span></li>
-              <li className="flex gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2"/><span><strong>SUBMITTED</strong> — KYC itsme® vérifié</span></li>
-              <li className="flex gap-3"><span className="w-2 h-2 rounded-full bg-emerald-500 mt-2"/><span><strong>SCORING</strong> B — endettement 28%</span></li>
-              <li className="flex gap-3"><span className="w-2 h-2 rounded-full bg-amber-500 mt-2 animate-pulse"/><span><strong>PENDING_REVIEW</strong> — en attente ADMIN (décision humaine)</span></li>
-            </ol>
+          <div className="bg-white rounded-2xl border p-5">
+            <h3 className="font-bold text-ink flex items-center gap-2"><Bell className="w-4 h-4 text-primary"/> Notifications</h3>
+            {mockNotifs.slice(0,3).map(n=>(
+              <div key={n.id} className={`mt-3 p-3 rounded-xl border flex gap-3 ${n.read?'bg-white':'bg-amber-50 border-amber-200'}`}>
+                <div className="w-8 h-8 rounded-full bg-ink text-white grid place-items-center text-xs">{n.channel[0]}</div>
+                <div><div className="text-sm font-bold text-ink">{n.title}</div><div className="text-xs text-slate-600">{n.body}</div><div className="text-[11px] text-slate-400">{n.date}</div></div>
+              </div>
+            ))}
+            <Link href={`/${locale}/notifications`} className="mt-3 inline-flex text-xs font-bold text-primary">Centre notifs →</Link>
           </div>
         </div>
+
+        <div className="bg-white rounded-2xl border p-5 flex flex-wrap justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-ink flex items-center gap-2"><FileText className="w-4 h-4"/> Documents</h3>
+            <div className="text-xs text-slate-500">{mockDocs.filter(d=>d.status==='VERIFIED').length}/{mockDocs.length} vérifiés</div>
+          </div>
+          <Link href={`/${locale}/credit/documents`} className="h-9 px-4 rounded-full bg-ink text-white text-xs font-bold flex items-center gap-1">Gérer <ArrowRight className="w-3 h-3"/></Link>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-2 text-xs">
+          <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5"/><span><strong>Simulation ≠ offre.</strong> Toute décision est humaine (ADMIN) et auditée.</span>
+        </div>
       </div>
-    </div>
+    </CustomerShell>
   );
 }
