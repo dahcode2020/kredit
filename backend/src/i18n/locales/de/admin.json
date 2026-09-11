@@ -1,0 +1,17 @@
+{
+  "dashboard.title": "Dashboard",
+  "dashboard.clients": "Kunden",
+  "dashboard.demandes": "Anträge",
+  "dashboard.aExaminer": "Zu prüfen",
+  "decision.title": "Entscheidung",
+  "decision.approve": "Genehmigen",
+  "decision.reject": "Ablehnen",
+  "decision.approveWithException": "Mit Ausnahme genehmigen",
+  "decision.reason": "Begründung",
+  "decision.reasonPlaceholder": "Detaillierte Begründung erforderlich (20-2000 Zeichen)",
+  "audit.title": "Audit",
+  "audit.hash": "Hash",
+  "templates.title": "Vorlagen",
+  "templates.preview": "Vorschau",
+  "templates.test": "Test senden"
+}

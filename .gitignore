@@ -1,0 +1,38 @@
+# deps
+node_modules
+.pnp
+.pnp.js
+
+# next
+frontend/.next
+frontend/out
+frontend/dist
+backend/dist
+backend/node_modules
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# os
+.DS_Store
+*.pem
+
+# docker
+pgdata
+
+# IDE
+.vscode
+.idea
+
+# cache
+.cache
+
+# ts build info
+*.tsbuildinfo

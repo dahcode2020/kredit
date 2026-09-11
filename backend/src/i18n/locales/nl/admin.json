@@ -1,0 +1,17 @@
+{
+  "dashboard.title": "Dashboard",
+  "dashboard.clients": "Klanten",
+  "dashboard.demandes": "Aanvragen",
+  "dashboard.aExaminer": "Te beoordelen",
+  "decision.title": "Beslissing",
+  "decision.approve": "Goedkeuren",
+  "decision.reject": "Weigeren",
+  "decision.approveWithException": "Goedkeuren met uitzondering",
+  "decision.reason": "Reden",
+  "decision.reasonPlaceholder": "Gedetailleerde reden vereist (20-2000 tekens)",
+  "audit.title": "Audit",
+  "audit.hash": "Hash",
+  "templates.title": "Sjablonen",
+  "templates.preview": "Voorbeeld",
+  "templates.test": "Test verzenden"
+}

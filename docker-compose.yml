@@ -1,0 +1,45 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: kredit
+      POSTGRES_USER: kredit
+      POSTGRES_PASSWORD: kredit
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U kredit"], interval: 5s, retries: 10 }
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    command: redis-server --appendonly yes
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    environment: { MINIO_ROOT_USER: minio, MINIO_ROOT_PASSWORD: minio12345 }
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [minio:/data]
+
+  backend:
+    build: { context: ./backend, dockerfile: Dockerfile }
+    environment:
+      DATABASE_URL: postgres://kredit:kredit@postgres:5432/kredit
+      REDIS_URL: redis://redis:6379
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: kredit-docs
+      JWT_SECRET: change-me-in-prod
+      CORS_ORIGINS: http://localhost:3000
+      PORT: 4000
+    ports: ["4000:4000"]
+    depends_on: [postgres, redis, minio]
+
+  frontend:
+    build: { context: ./frontend, dockerfile: Dockerfile }
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000/api/v1
+    ports: ["3000:3000"]
+    depends_on: [backend]
+
+volumes: { pgdata: {}, minio: {} }
