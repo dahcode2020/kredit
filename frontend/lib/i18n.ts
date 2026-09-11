@@ -1,251 +1,264 @@
-// Simple i18n store — production would use next-intl with ICU. Here we keep it client-side for demo speed, but DB-ready.
+// KREDIT i18n — hiérarchie 1) préférence utilisateur 2) navigateur 3) défaut + persistance + ICU + fr-BE override
+// Structure: frontend/i18n/{fr,en,nl,de}/*.json (11 namespaces) + fr-BE override
+import frCommon from "@/i18n/fr/common.json";
+import enCommon from "@/i18n/en/common.json";
+import nlCommon from "@/i18n/nl/common.json";
+import deCommon from "@/i18n/de/common.json";
+import frAuth from "@/i18n/fr/auth.json";
+import enAuth from "@/i18n/en/auth.json";
+import nlAuth from "@/i18n/nl/auth.json";
+import deAuth from "@/i18n/de/auth.json";
+import frDashboard from "@/i18n/fr/dashboard.json";
+import enDashboard from "@/i18n/en/dashboard.json";
+import nlDashboard from "@/i18n/nl/dashboard.json";
+import deDashboard from "@/i18n/de/dashboard.json";
+import frCredit from "@/i18n/fr/credit.json";
+import enCredit from "@/i18n/en/credit.json";
+import nlCredit from "@/i18n/nl/credit.json";
+import deCredit from "@/i18n/de/credit.json";
+import frInvestment from "@/i18n/fr/investment.json";
+import enInvestment from "@/i18n/en/investment.json";
+import nlInvestment from "@/i18n/nl/investment.json";
+import deInvestment from "@/i18n/de/investment.json";
+import frPayments from "@/i18n/fr/payments.json";
+import enPayments from "@/i18n/en/payments.json";
+import nlPayments from "@/i18n/nl/payments.json";
+import dePayments from "@/i18n/de/payments.json";
+import frDocuments from "@/i18n/fr/documents.json";
+import enDocuments from "@/i18n/en/documents.json";
+import nlDocuments from "@/i18n/nl/documents.json";
+import deDocuments from "@/i18n/de/documents.json";
+import frNotifications from "@/i18n/fr/notifications.json";
+import enNotifications from "@/i18n/en/notifications.json";
+import nlNotifications from "@/i18n/nl/notifications.json";
+import deNotifications from "@/i18n/de/notifications.json";
+import frAdmin from "@/i18n/fr/admin.json";
+import enAdmin from "@/i18n/en/admin.json";
+import nlAdmin from "@/i18n/nl/admin.json";
+import deAdmin from "@/i18n/de/admin.json";
+import frErrors from "@/i18n/fr/errors.json";
+import enErrors from "@/i18n/en/errors.json";
+import nlErrors from "@/i18n/nl/errors.json";
+import deErrors from "@/i18n/de/errors.json";
+import frLegal from "@/i18n/fr/legal.json";
+import enLegal from "@/i18n/en/legal.json";
+import nlLegal from "@/i18n/nl/legal.json";
+import deLegal from "@/i18n/de/legal.json";
+import frBEOverride from "@/i18n/fr/fr-BE.json";
+
+// Legacy flat (hero etc.) — kept for compat, merged as namespace "common" fallback
+import frLegacy from "@/i18n/fr.json";
+import enLegacy from "@/i18n/en.json";
+import nlLegacy from "@/i18n/nl.json";
+import deLegacy from "@/i18n/de.json";
+
 export const locales = ["fr", "en", "nl", "de"] as const;
 export type Locale = typeof locales[number];
 export const defaultLocale: Locale = "fr";
 
-export const translations: Record<Locale, Record<string, string>> = {
+export const namespaces = ["common","auth","dashboard","credit","investment","payments","documents","notifications","admin","errors","legal"] as const;
+export type Namespace = typeof namespaces[number];
+
+type Dict = Record<string, string>;
+
+// Build per-locale per-namespace dicts
+const raw: Record<Locale, Record<Namespace, Dict>> = {
   fr: {
-    "nav.home": "Accueil",
-    "nav.simulator": "Simulateur",
-    "nav.products": "Crédits",
-    "nav.invest": "Investir",
-    "nav.about": "À propos",
-    "nav.contact": "Contact",
-    "nav.login": "Espace client",
-    "nav.cta": "Demander un crédit",
-    "hero.eyebrow": "Plateforme agréée  •  Belgique  •  EUR",
-    "hero.title1": "Votre crédit.",
-    "hero.title2": "Votre avenir.",
-    "hero.title3": "En toute confiance.",
-    "hero.subtitle": "KREDIT est la plateforme européenne de crédit et d'investissement qui calcule, contrôle et recommande — mais laisse toujours la décision finale à un expert humain.",
-    "hero.cta1": "Simuler mon crédit",
-    "hero.cta2": "Voir la démo",
-    "hero.disclaimer": "Simulation indicative uniquement — ne constitue pas une offre ferme. Décision soumise à validation administrative.",
-    "hero.trust": "Conforme BNB • FSMA • RGPD • eIDAS",
-    "stats.clients": "Clients accompagnés",
-    "stats.dossiers": "Dossiers traités",
-    "stats.satisfaction": "Satisfaction",
-    "stats.delay": "Délai moyen de réponse",
-    "about.eyebrow": "Pourquoi KREDIT",
-    "about.title": "Une architecture pensée pour la production, pas pour la démo.",
-    "about.p1": "Chaque règle pays, chaque taux, chaque plafond est configurable. Aucun calcul n'est en dur. L'audit est immuable. La décision exceptionnelle est tracée avec motif.",
-    "about.p2": "Le moteur automatique effectue contrôles et recommandations. L'administrateur conserve la décision finale. C'est notre engagement de conformité.",
-    "about.badge": "Belgique d'abord, Europe ensuite",
-    "featured.title": "Nos solutions",
-    "featured.subtitle": "Crédit personnel, hypothécaire, professionnel et opportunités d'investissement — un seul endroit, une gouvernance unique.",
-    "products.personal": "Crédit Personnel",
-    "products.mortgage": "Crédit Hypothécaire",
-    "products.business": "Crédit Professionnel",
-    "products.invest": "Investissements",
-    "products.from": "À partir de",
-    "products.cta": "Découvrir",
-    "process.title": "Comment ça marche",
-    "process.subtitle": "Quatre étapes claires. Zéro zone grise.",
-    "services.title": "Nos garanties",
-    "services.subtitle": "Ce que Dewi appelle 'Services', nous l'appelons exigences de production.",
-    "cta.banner": "Prêt à simuler ?",
-    "cta.bannerSub": "Obtenez une estimation en 60 secondes. Sans engagement. Sans impact sur votre dossier.",
-    "testimonials.title": "Ils nous font confiance",
-    "contact.title": "Parlons de votre projet",
-    "contact.subtitle": "Une équipe humaine à Bruxelles, disponible en 4 langues.",
-    "footer.disclaimer": "KREDIT est une plateforme technologique. Elle ne constitue pas un établissement de crédit. Toute offre ferme est soumise à agrément et à validation juridique. Simulation ≠ offre. Décision automatique ≠ décision bancaire définitive.",
-    "simulator.title": "Simulateur de crédit",
-    "simulator.subtitle": "Indiquez montant et durée. Le calcul est instantané, transparent et auditée.",
-    "simulator.amount": "Montant souhaité",
-    "simulator.term": "Durée",
-    "simulator.monthly": "Mensualité estimée",
-    "simulator.taeg": "TAEG à partir de",
-    "simulator.total": "Coût total indicatif",
-    "simulator.request": "Déposer ma demande",
-    "simulator.legal": "Exemple indicatif calculé selon méthode française (amortissement constant). Hors assurances et frais. Validation juridique requise pour TAEG définitif.",
-    "auth.title": "Accédez à votre espace",
-    "auth.subtitle": "Customer • Admin • Super Admin — démonstration des rôles",
-    "roles.customer": "CUSTOMER",
-    "roles.admin": "ADMIN",
-    "roles.super": "SUPER_ADMIN",
+    common: { ...frLegacy as Dict, ...frCommon as Dict, ...frBEOverride as Dict },
+    auth: frAuth as Dict,
+    dashboard: frDashboard as Dict,
+    credit: frCredit as Dict,
+    investment: frInvestment as Dict,
+    payments: frPayments as Dict,
+    documents: frDocuments as Dict,
+    notifications: frNotifications as Dict,
+    admin: frAdmin as Dict,
+    errors: frErrors as Dict,
+    legal: frLegal as Dict,
   },
   en: {
-    "nav.home": "Home",
-    "nav.simulator": "Simulator",
-    "nav.products": "Loans",
-    "nav.invest": "Invest",
-    "nav.about": "About",
-    "nav.contact": "Contact",
-    "nav.login": "Client area",
-    "nav.cta": "Apply for credit",
-    "hero.eyebrow": "Licensed platform  •  Belgium  •  EUR",
-    "hero.title1": "Your credit.",
-    "hero.title2": "Your future.",
-    "hero.title3": "With confidence.",
-    "hero.subtitle": "KREDIT is the European credit & investment platform that computes, checks and recommends — while keeping the final decision in human hands.",
-    "hero.cta1": "Simulate my loan",
-    "hero.cta2": "Watch demo",
-    "hero.disclaimer": "Indicative simulation only — not a firm offer. Decision subject to admin validation.",
-    "hero.trust": "BNB • FSMA • GDPR • eIDAS compliant",
-    "stats.clients": "Clients supported",
-    "stats.dossiers": "Files processed",
-    "stats.satisfaction": "Satisfaction",
-    "stats.delay": "Avg. response time",
-    "about.eyebrow": "Why KREDIT",
-    "about.title": "Built for production, not for slides.",
-    "about.p1": "Every country rule, rate and ceiling is configurable. No hard-coded logic. Immutable audit. Exceptional decisions are logged with reason.",
-    "about.p2": "The engine checks and recommends. The admin decides. That's our compliance promise.",
-    "about.badge": "Belgium first, Europe next",
-    "featured.title": "Our solutions",
-    "featured.subtitle": "Personal, mortgage, business credit and investment opportunities — one place, one governance.",
-    "products.personal": "Personal Loan",
-    "products.mortgage": "Mortgage",
-    "products.business": "Business Loan",
-    "products.invest": "Investments",
-    "products.from": "From",
-    "products.cta": "Explore",
-    "process.title": "How it works",
-    "process.subtitle": "Four clear steps. No grey area.",
-    "services.title": "Our guarantees",
-    "services.subtitle": "What Dewi calls 'Services', we call production requirements.",
-    "cta.banner": "Ready to simulate?",
-    "cta.bannerSub": "Get an estimate in 60 seconds. No commitment. No impact on your record.",
-    "testimonials.title": "They trust us",
-    "contact.title": "Let's talk about your project",
-    "contact.subtitle": "A human team in Brussels, available in 4 languages.",
-    "footer.disclaimer": "KREDIT is a technology platform. It is not a bank. Any firm offer is subject to licensing and legal validation. Simulation ≠ offer. Automated decision ≠ final banking decision.",
-    "simulator.title": "Loan simulator",
-    "simulator.subtitle": "Enter amount and term. Instant, transparent, audited calculation.",
-    "simulator.amount": "Desired amount",
-    "simulator.term": "Term",
-    "simulator.monthly": "Estimated monthly",
-    "simulator.taeg": "APR from",
-    "simulator.total": "Indicative total cost",
-    "simulator.request": "Submit application",
-    "simulator.legal": "Indicative example using French amortisation. Excl. insurance/fees. Legal validation required for final APR.",
-    "auth.title": "Access your space",
-    "auth.subtitle": "Customer • Admin • Super Admin — role demo",
-    "roles.customer": "CUSTOMER",
-    "roles.admin": "ADMIN",
-    "roles.super": "SUPER_ADMIN",
+    common: { ...enLegacy as Dict, ...enCommon as Dict },
+    auth: enAuth as Dict,
+    dashboard: enDashboard as Dict,
+    credit: enCredit as Dict,
+    investment: enInvestment as Dict,
+    payments: enPayments as Dict,
+    documents: enDocuments as Dict,
+    notifications: enNotifications as Dict,
+    admin: enAdmin as Dict,
+    errors: enErrors as Dict,
+    legal: enLegal as Dict,
   },
   nl: {
-    "nav.home": "Home",
-    "nav.simulator": "Simulator",
-    "nav.products": "Kredieten",
-    "nav.invest": "Investeren",
-    "nav.about": "Over ons",
-    "nav.contact": "Contact",
-    "nav.login": "Klantenzone",
-    "nav.cta": "Krediet aanvragen",
-    "hero.eyebrow": "Vergund platform  •  België  •  EUR",
-    "hero.title1": "Uw krediet.",
-    "hero.title2": "Uw toekomst.",
-    "hero.title3": "Met vertrouwen.",
-    "hero.subtitle": "KREDIT is het Europese krediet- en investeringsplatform dat berekent, controleert en aanbeveelt — maar de eindbeslissing steeds aan een mens overlaat.",
-    "hero.cta1": "Simuleer mijn krediet",
-    "hero.cta2": "Bekijk demo",
-    "hero.disclaimer": "Enkel indicatieve simulatie — geen bindend aanbod. Beslissing na administratieve validatie.",
-    "hero.trust": "Conform NBB • FSMA • GDPR • eIDAS",
-    "stats.clients": "Begeleide klanten",
-    "stats.dossiers": "Behandelde dossiers",
-    "stats.satisfaction": "Tevredenheid",
-    "stats.delay": "Gem. antwoordtijd",
-    "about.eyebrow": "Waarom KREDIT",
-    "about.title": "Gebouwd voor productie, niet voor demo.",
-    "about.p1": "Elke landenregel, rente en plafond is configureerbaar. Niets hard-coded. Onveranderlijke audit. Uitzonderlijke beslissingen worden gelogd met reden.",
-    "about.p2": "De engine controleert en beveelt aan. De admin beslist. Dat is onze compliance-belofte.",
-    "about.badge": "Eerst België, daarna Europa",
-    "featured.title": "Onze oplossingen",
-    "featured.subtitle": "Persoonlijk, hypothecair, zakelijk krediet en investeringskansen — één plek, één governance.",
-    "products.personal": "Persoonlijke Lening",
-    "products.mortgage": "Hypothecair Krediet",
-    "products.business": "Zakelijk Krediet",
-    "products.invest": "Beleggingen",
-    "products.from": "Vanaf",
-    "products.cta": "Ontdek",
-    "process.title": "Hoe het werkt",
-    "process.subtitle": "Vier duidelijke stappen. Geen grijze zone.",
-    "services.title": "Onze garanties",
-    "services.subtitle": "Wat Dewi 'Services' noemt, noemen wij productievereisten.",
-    "cta.banner": "Klaar om te simuleren?",
-    "cta.bannerSub": "Krijg een schatting in 60 seconden. Vrijblijvend. Geen impact op uw dossier.",
-    "testimonials.title": "Zij vertrouwen ons",
-    "contact.title": "Laten we over uw project praten",
-    "contact.subtitle": "Een menselijk team in Brussel, beschikbaar in 4 talen.",
-    "footer.disclaimer": "KREDIT is een technologieplatform. Geen bank. Elk bindend aanbod vereist vergunning en juridische validatie. Simulatie ≠ aanbod. Automatische beslissing ≠ definitieve bancaire beslissing.",
-    "simulator.title": "Kredietsimulator",
-    "simulator.subtitle": "Geef bedrag en looptijd in. Onmiddellijke, transparante en geaudite berekening.",
-    "simulator.amount": "Gewenst bedrag",
-    "simulator.term": "Looptijd",
-    "simulator.monthly": "Geschatte maandlast",
-    "simulator.taeg": "JKP vanaf",
-    "simulator.total": "Indicatieve totale kost",
-    "simulator.request": "Aanvraag indienen",
-    "simulator.legal": "Indicatief voorbeeld met Franse aflossing. Excl. verzekeringen/kosten. Juridische validatie vereist voor definitief JKP.",
-    "auth.title": "Toegang tot uw ruimte",
-    "auth.subtitle": "Customer • Admin • Super Admin — rollendemo",
-    "roles.customer": "CUSTOMER",
-    "roles.admin": "ADMIN",
-    "roles.super": "SUPER_ADMIN",
+    common: { ...nlLegacy as Dict, ...nlCommon as Dict },
+    auth: nlAuth as Dict,
+    dashboard: nlDashboard as Dict,
+    credit: nlCredit as Dict,
+    investment: nlInvestment as Dict,
+    payments: nlPayments as Dict,
+    documents: nlDocuments as Dict,
+    notifications: nlNotifications as Dict,
+    admin: nlAdmin as Dict,
+    errors: nlErrors as Dict,
+    legal: nlLegal as Dict,
   },
   de: {
-    "nav.home": "Start",
-    "nav.simulator": "Simulator",
-    "nav.products": "Kredite",
-    "nav.invest": "Investieren",
-    "nav.about": "Über uns",
-    "nav.contact": "Kontakt",
-    "nav.login": "Kundenbereich",
-    "nav.cta": "Kredit beantragen",
-    "hero.eyebrow": "Lizenzierte Plattform  •  Belgien  •  EUR",
-    "hero.title1": "Ihr Kredit.",
-    "hero.title2": "Ihre Zukunft.",
-    "hero.title3": "Mit Vertrauen.",
-    "hero.subtitle": "KREDIT ist die europäische Kredit- und Investmentplattform, die berechnet, prüft und empfiehlt — die finale Entscheidung bleibt jedoch stets beim Menschen.",
-    "hero.cta1": "Kredit simulieren",
-    "hero.cta2": "Demo ansehen",
-    "hero.disclaimer": "Nur indikative Simulation — kein verbindliches Angebot. Entscheidung nach administrativer Prüfung.",
-    "hero.trust": "NBB • FSMA • DSGVO • eIDAS konform",
-    "stats.clients": "Betreute Kunden",
-    "stats.dossiers": "Bearbeitete Anträge",
-    "stats.satisfaction": "Zufriedenheit",
-    "stats.delay": "Ø Antwortzeit",
-    "about.eyebrow": "Warum KREDIT",
-    "about.title": "Für Produktion gebaut, nicht für Demo.",
-    "about.p1": "Jede Länderregel, jeder Zinssatz, jede Obergrenze ist konfigurierbar. Nichts hardcodiert. Unveränderliches Audit. Ausnahmen werden mit Begründung protokolliert.",
-    "about.p2": "Die Engine prüft und empfiehlt. Der Admin entscheidet. Das ist unser Compliance-Versprechen.",
-    "about.badge": "Erst Belgien, dann Europa",
-    "featured.title": "Unsere Lösungen",
-    "featured.subtitle": "Privat-, Hypotheken-, Firmenkredit und Investmentchancen — ein Ort, eine Governance.",
-    "products.personal": "Privatkredit",
-    "products.mortgage": "Hypothekarkredit",
-    "products.business": "Firmenkredit",
-    "products.invest": "Investitionen",
-    "products.from": "Ab",
-    "products.cta": "Entdecken",
-    "process.title": "So funktioniert's",
-    "process.subtitle": "Vier klare Schritte. Keine Grauzone.",
-    "services.title": "Unsere Garantien",
-    "services.subtitle": "Was Dewi 'Services' nennt, nennen wir Produktionsanforderungen.",
-    "cta.banner": "Bereit zu simulieren?",
-    "cta.bannerSub": "Schätzung in 60 Sekunden. Unverbindlich. Ohne Einfluss auf Ihre Akte.",
-    "testimonials.title": "Sie vertrauen uns",
-    "contact.title": "Sprechen wir über Ihr Projekt",
-    "contact.subtitle": "Ein menschliches Team in Brüssel, verfügbar in 4 Sprachen.",
-    "footer.disclaimer": "KREDIT ist eine Technologieplattform. Keine Bank. Jedes verbindliche Angebot erfordert Lizenz und rechtliche Validierung. Simulation ≠ Angebot. Automatische Entscheidung ≠ endgültige Bankentscheidung.",
-    "simulator.title": "Kreditsimulator",
-    "simulator.subtitle": "Betrag und Laufzeit eingeben. Sofortige, transparente, auditierte Berechnung.",
-    "simulator.amount": "Wunschbetrag",
-    "simulator.term": "Laufzeit",
-    "simulator.monthly": "Geschätzte Rate",
-    "simulator.taeg": "Eff. Jahreszins ab",
-    "simulator.total": "Indikative Gesamtkosten",
-    "simulator.request": "Antrag einreichen",
-    "simulator.legal": "Indikatives Beispiel mit französischer Tilgung. Ohne Versicherungen/Gebühren. Rechtliche Validierung für endgültigen Effektivzins erforderlich.",
-    "auth.title": "Zugang zu Ihrem Bereich",
-    "auth.subtitle": "Customer • Admin • Super Admin — Rollendemo",
-    "roles.customer": "CUSTOMER",
-    "roles.admin": "ADMIN",
-    "roles.super": "SUPER_ADMIN",
+    common: { ...deLegacy as Dict, ...deCommon as Dict },
+    auth: deAuth as Dict,
+    dashboard: deDashboard as Dict,
+    credit: deCredit as Dict,
+    investment: deInvestment as Dict,
+    payments: dePayments as Dict,
+    documents: deDocuments as Dict,
+    notifications: deNotifications as Dict,
+    admin: deAdmin as Dict,
+    errors: deErrors as Dict,
+    legal: deLegal as Dict,
   },
 };
 
-export function t(locale: Locale, key: string): string {
-  return translations[locale]?.[key] ?? translations[defaultLocale][key] ?? key;
+// Keep old flat for t() compat: merge all namespaces with prefix "ns:key" and also bare keys (legacy)
+export const translations: Record<Locale, Record<string,string>> = {
+  fr: flattenWithLegacy("fr"),
+  en: flattenWithLegacy("en"),
+  nl: flattenWithLegacy("nl"),
+  de: flattenWithLegacy("de"),
+};
+
+function flattenWithLegacy(locale: Locale): Record<string,string> {
+  const out: Record<string,string> = {};
+  // legacy bare keys already in common
+  for (const ns of namespaces) {
+    for (const [k,v] of Object.entries(raw[locale][ns])) {
+      out[`${ns}:${k}`] = v;
+      // also expose bare for ns=common (hero etc.)
+      if (ns === "common" && !out[k]) out[k] = v;
+      // expose without prefix for convenience if key contains dot already (credit:simulator.title will also be accessible as simulator.title fallback)
+    }
+  }
+  return out;
 }
+
+// --- ICU-like interpolation + plural ---
+function interpolate(template: string, vars?: Record<string, any>, locale: Locale = defaultLocale): string {
+  if (!vars) return template;
+  // Handle plural: {count, plural, one {# document} other {# documents}}
+  let out = template;
+  // plural regex
+  const pluralRe = /\{(\w+),\s*plural,\s*one\s*\{([^}]*)\}\s*other\s*\{([^}]*)\}\}/g;
+  out = out.replace(pluralRe, (_, varName: string, one: string, other: string) => {
+    const n = Number(vars[varName] ?? 0);
+    const rule = new Intl.PluralRules(localeToIntl[locale] as any).select(n);
+    const chosen = rule === "one" ? one : other;
+    return chosen.replace("#", String(n));
+  });
+  // simple {var} replacement
+  out = out.replace(/\{(\w+)\}/g, (_, k: string) => (vars[k] !== undefined ? String(vars[k]) : `{${k}}`));
+  return out;
+}
+
+export const localeToIntl: Record<Locale, string> = { fr:"fr-BE", en:"en-BE", nl:"nl-BE", de:"de-BE" };
+
+// t with namespace:key + vars + locale
+export function t(locale: Locale, key: string, vars?: Record<string, any>): string {
+  // Support both "ns:key" and bare "key" (legacy). If no colon, try common:key, then bare.
+  let dictKey = key;
+  let template: string | undefined;
+  if (key.includes(":")) {
+    template = translations[locale]?.[key] ?? translations[defaultLocale]?.[key];
+  } else {
+    // try namespaces in order: common, then credit, then ... but prefer common
+    template = translations[locale]?.[key] ?? translations[locale]?.[`common:${key}`] ?? translations[defaultLocale]?.[key] ?? translations[defaultLocale]?.[`common:${key}`];
+    // also search across all namespaces if not found (fallback)
+    if (!template) {
+      for (const ns of namespaces) {
+        const cand = translations[locale]?.[`${ns}:${key}`];
+        if (cand) { template = cand; break; }
+      }
+    }
+  }
+  if (!template) {
+    if (typeof window !== "undefined") console.warn(`[i18n] missing key "${key}" for locale "${locale}"`);
+    return key;
+  }
+  return interpolate(template, vars, locale);
+}
+
+// Namespace-aware helper: tNs('credit','simulator.title', {amount})
+export function tNs(locale: Locale, ns: Namespace, key: string, vars?: Record<string, any>) {
+  return t(locale, `${ns}:${key}`, vars);
+}
+
+// --- Detection hierarchy ---
+export function parseAcceptLanguage(header: string): Locale | null {
+  if (!header) return null;
+  const parts = header.split(",").map(s => {
+    const [lang, qStr] = s.trim().split(";q=");
+    const q = qStr ? parseFloat(qStr) : 1;
+    const base = lang.toLowerCase().split("-")[0];
+    return { base, q };
+  }).sort((a,b)=> b.q - a.q);
+  for (const p of parts) {
+    if ((locales as readonly string[]).includes(p.base)) return p.base as Locale;
+  }
+  return null;
+}
+
+export function detectLocale(opts: {
+  cookieLocale?: string | null,
+  jwtLocale?: string | null,
+  storedLocale?: string | null,
+  acceptLanguage?: string | null,
+  navigatorLanguages?: readonly string[]
+}): Locale {
+  // 1. préférence utilisateur (cookie > jwt > localStorage)
+  const candidates = [opts.cookieLocale, opts.jwtLocale, opts.storedLocale].map(v=> v?.toLowerCase().split("-")[0]);
+  for (const c of candidates) if (c && (locales as readonly string[]).includes(c)) return c as Locale;
+  // 2. navigateur
+  if (opts.navigatorLanguages) {
+    for (const nav of opts.navigatorLanguages) {
+      const base = nav.toLowerCase().split("-")[0];
+      if ((locales as readonly string[]).includes(base)) return base as Locale;
+    }
+  }
+  if (opts.acceptLanguage) {
+    const parsed = parseAcceptLanguage(opts.acceptLanguage);
+    if (parsed) return parsed;
+  }
+  // 3. défaut
+  return defaultLocale;
+}
+
+// --- Persistence ---
+export const STORAGE_KEY = "kredit-locale";
+export const COOKIE_NAME = "NEXT_LOCALE";
+export const COOKIE_MAX_AGE = 31536000; // 1y
+
+export function getPersistedLocale(): Locale | null {
+  if (typeof window === "undefined") return null;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored && (locales as readonly string[]).includes(stored)) return stored as Locale;
+  const match = document.cookie.match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+  if (match && (locales as readonly string[]).includes(match[1])) return match[1] as Locale;
+  return null;
+}
+
+export function setPersistedLocale(locale: Locale) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_KEY, locale);
+    document.cookie = `${COOKIE_NAME}=${locale}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+  }
+  // also PATCH /api/v1/customers/me {locale} if authenticated — caller handles
+}
+
+// Server helper (App Router)
+export async function getTranslations(locale: Locale, ns: Namespace) {
+  const dict = raw[locale]?.[ns] ?? raw[defaultLocale][ns];
+  return (key: string, vars?: Record<string, any>) => {
+    const tmpl = dict[key] ?? (raw[locale][ns] as any)[key] ?? key;
+    return interpolate(tmpl, vars, locale);
+  };
+}
+
+// Export raw for backend sync
+export { raw as i18nRaw };

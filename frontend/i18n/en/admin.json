@@ -1,0 +1,17 @@
+{
+  "dashboard.title": "Dashboard",
+  "dashboard.clients": "Clients",
+  "dashboard.demandes": "Applications",
+  "dashboard.aExaminer": "To review",
+  "decision.title": "Decision",
+  "decision.approve": "Approve",
+  "decision.reject": "Reject",
+  "decision.approveWithException": "Approve with exception",
+  "decision.reason": "Reason",
+  "decision.reasonPlaceholder": "Detailed reason required (20-2000 chars)",
+  "audit.title": "Audit",
+  "audit.hash": "Hash",
+  "templates.title": "Templates",
+  "templates.preview": "Preview",
+  "templates.test": "Send test"
+}

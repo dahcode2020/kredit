@@ -1,0 +1,17 @@
+{
+  "dashboard.title": "Dashboard",
+  "dashboard.clients": "Clients",
+  "dashboard.demandes": "Demandes",
+  "dashboard.aExaminer": "À examiner",
+  "decision.title": "Décision",
+  "decision.approve": "Approuver",
+  "decision.reject": "Refuser",
+  "decision.approveWithException": "Approuver avec exception",
+  "decision.reason": "Motif",
+  "decision.reasonPlaceholder": "Motif détaillé obligatoire (20-2000 caractères)",
+  "audit.title": "Audit",
+  "audit.hash": "Hash",
+  "templates.title": "Templates",
+  "templates.preview": "Prévisualiser",
+  "templates.test": "Envoyer test"
+}

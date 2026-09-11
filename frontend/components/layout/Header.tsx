@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, Globe, Shield } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Locale, locales, t } from "@/lib/i18n";
+import { Locale, locales, t, setPersistedLocale } from "@/lib/i18n";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -12,9 +12,12 @@ export default function Header({ locale }: { locale: Locale }) {
   const router = useRouter();
   const pathname = usePathname();
   const switchLocale = (l: Locale) => {
+    setPersistedLocale(l);
     const parts = pathname.split("/");
     parts[1] = l;
     router.push(parts.join("/") || `/${l}`);
+    // persistance backend si authentifié (fire-and-forget)
+    fetch("/api/v1/customers/me/preferences", { method: "PATCH", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ locale: l }) }).catch(()=>{});
   };
   const tr = (k: string) => t(locale, k);
   return (
