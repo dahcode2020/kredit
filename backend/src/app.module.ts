@@ -14,7 +14,8 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { InvestmentsModule } from './modules/investments/investments.module';
 @Module({
-  imports: [ ConfigModule.forRoot({ isGlobal: true }), AuthModule, CustomersModule, KycModule, CountriesModule, CreditModule, ApplicationsModule, ScoringModule, DecisionModule, RepaymentModule, PaymentsModule, DocumentsModule, NotificationsModule, AuditModule, AdminModule ],
+  imports: [ ConfigModule.forRoot({ isGlobal: true }), AuthModule, CustomersModule, KycModule, CountriesModule, CreditModule, ApplicationsModule, ScoringModule, DecisionModule, RepaymentModule, PaymentsModule, DocumentsModule, NotificationsModule, AuditModule, AdminModule, InvestmentsModule ],
 })
 export class AppModule {}
