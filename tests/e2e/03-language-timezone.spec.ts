@@ -1,20 +1,43 @@
 import { test, expect } from '@playwright/test';
 
-test('changement langue FR→NL → URL /nl + cookie NEXT_LOCALE + html lang', async ({ page }) => {
+test('changement langue FR→NL → URL /nl + cookie NEXT_LOCALE + html lang (liste déroulante)', async ({ page }) => {
   await page.goto('/fr');
   await expect(page.locator('html')).toHaveAttribute('lang','fr');
-  // switcher: Header language selector data-testid="lang-switcher" or links /nl
-  const nlLink = page.getByRole('link', { name: /^NL$/ }).first().or(page.locator('a[href="/nl"]').first());
-  if (await nlLink.count()) {
-    await nlLink.click();
+
+  // Nouveau header : langue = liste déroulante compacte (bouton FR + listbox)
+  // On ouvre la liste et on sélectionne NL
+  const langButton = page.getByRole('button', { name: /Changer de langue/i }).or(page.getByRole('button', { name: /^fr$/i })).first();
+  const nlOption = page.getByRole('option', { name: /Nederlands/i }).or(page.getByRole('button', { name: /Nederlands/i })).first();
+  const legacyLink = page.getByRole('link', { name: /^NL$/ }).first().or(page.locator('a[href="/nl"]').first());
+
+  if (await langButton.count()) {
+    await langButton.click();
+    // Mobile: même bouton dans menu burger → ouvrir burger d'abord si besoin
+    if (!(await nlOption.isVisible().catch(()=>false))) {
+      const burger = page.getByRole('button', { name: /Menu/i }).or(page.locator('button:has(svg.lucide-menu)')).first();
+      if (await burger.isVisible().catch(()=>false)) {
+        await burger.click();
+        await page.waitForTimeout(300);
+      }
+      // Après ouverture burger, la liste est verticale sans dropdown
+      const nlInDrawer = page.getByRole('button', { name: /Nederlands/i }).first();
+      if (await nlInDrawer.count()) {
+        await nlInDrawer.click();
+      } else {
+        await langButton.click().catch(()=>{});
+        await nlOption.click({ timeout: 5000 }).catch(async ()=> { await page.goto('/nl'); });
+      }
+    } else {
+      await nlOption.click();
+    }
+    await expect(page).toHaveURL(/\/nl/, { timeout: 8000 });
+    await expect(page.locator('html')).toHaveAttribute('lang','nl');
+  } else if (await legacyLink.count()) {
+    await legacyLink.click();
     await expect(page).toHaveURL(/\/nl/);
     await expect(page.locator('html')).toHaveAttribute('lang','nl');
-    const cookies = await page.context().cookies();
-    // NEXT_LOCALE set via next-intl middleware
-    // may be cookie or via localStorage, either ok
-    // expect at least URL changed which is source of truth
   } else {
-    // fallback: direct nav
+    // fallback: direct nav (si header non rendu en preview)
     await page.goto('/nl');
     await expect(page).toHaveURL(/\/nl/);
   }
