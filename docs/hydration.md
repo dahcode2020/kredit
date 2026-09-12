@@ -259,6 +259,26 @@ dossiers compilés, la fraîcheur relative des sources et des chunks, `max_user_
 l'octet servi à l'octet du disque pour `webpack.js` et `main-app.js` : c'est lui qui dit si l'on est
 dans ce cas, dans l'autre (worker hérité) ou dans aucun.
 
+### 16. Une animation ne doit jamais être le seul chemin vers le contenu
+
+`opacity: 0` dans un `style` calculé au render, c'est la même famille d'erreur qu'un composant
+client-only rendu trop tôt : le HTML serveur et le HTML client ne racontent pas la même chose — et ici
+le texte manque carrément à l'appel (crawler sans moteur, bloqueur de scripts, impression,
+`prefers-reduced-motion`). La couche de mouvement pose donc ses états initiaux **dans la feuille de
+style** (`[data-reveal]`, section Motion de `app/globals.css`), seul endroit d'où un média query et un
+`<noscript>` peuvent les annuler. Son contrat d'hydratation est double :
+
+- `data-shown="false"` est écrit par le serveur **et** par le premier rendu client — la bascule vient
+  après, en effet ;
+- `CountUp` reçoit le texte déjà rendu (`final`) et y revient à la fin de la montée : un `Intl` de
+  navigateur qui écrit une insécable là où le serveur écrivait une espace fine ne peut plus créer
+  d'écart, puisqu'ils ne s'occupent jamais du même rendu.
+
+Gardé par quatre règles de `check:hydration` (`motion-reduced-motion`, `motion-keyframes-orphelin`,
+`motion-client-composant`, `motion-cache-au-render`) et par `tests/unit/motion.spec.tsx` (15 cas). Le
+reste — pourquoi `transform`/`opacity` et jamais `width`, d'où viennent les durées — est dans
+`docs/motion.md`.
+
 ## 3. Vérification
 
 Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :

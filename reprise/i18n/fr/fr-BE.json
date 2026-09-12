@@ -1,0 +1,6 @@
+{
+  "common.nav.home": "Accueil",
+  "legal.disclaimer.simulation": "Simulation indicative uniquement — ne constitue pas une offre ferme selon le Code de droit économique belge. TAEG indicatif, hors assurances. Agrément BNB/FSMA.",
+  "credit.simulator.legal": "Exemple indicatif — Registre national, itsme®, BNB Centrale des crédits aux particuliers. Validation juridique BE requise.",
+  "address.format": "{street} {number} bte {box}, {postal} {city}, Belgique"
+}

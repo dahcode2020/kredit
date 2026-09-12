@@ -1,0 +1,18 @@
+{
+  "app/[locale]/admin/credit-applications/[id]/page.tsx": 9,
+  "app/[locale]/admin/customers/[id]/page.tsx": 3,
+  "app/[locale]/admin/notifications/page.tsx": 5,
+  "app/[locale]/admin/settings/page.tsx": 7,
+  "app/[locale]/credit/applications/[id]/page.tsx": 4,
+  "app/[locale]/credit/documents/page.tsx": 3,
+  "app/[locale]/credit/page.tsx": 5,
+  "app/[locale]/credit/repayments/page.tsx": 4,
+  "app/[locale]/dashboard/page.tsx": 9,
+  "app/[locale]/examples/i18n/page.tsx": 2,
+  "app/[locale]/investments/[id]/page.tsx": 2,
+  "app/[locale]/investments/page.tsx": 2,
+  "app/[locale]/profile/page.tsx": 5,
+  "app/[locale]/security/page.tsx": 2,
+  "app/[locale]/settings/page.tsx": 4,
+  "app/[locale]/super/page.tsx": 9
+}

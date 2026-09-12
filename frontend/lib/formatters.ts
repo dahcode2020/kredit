@@ -112,6 +112,22 @@ export function formatPercent(n: number, locale: Locale, digits = 1) {
   // n = 0.384 => 38,4%
   return normalizeIntlSpaces(new Intl.NumberFormat(localeToIntl[locale], { style: "percent", minimumFractionDigits: digits, maximumFractionDigits: digits }).format(n));
 }
+/**
+ * Montant « de vitrine »: 1 000 000 € devient « 1 M€ », 200 000 € devient « 200 k€ ».
+ *
+ * Né parce que la carte d'accueil affichait un « 500k€ » écrit à la main, devenu faux dès que le
+ * plafond hypothécaire a bougé. Un plafond de vitrine doit être un `format(plafond)`, pas une
+ * saisie. Le mantisse passe par `formatNumber` (espace normalisée, virgule par locale), le suffixe
+ * k/M est technique et identique dans les quatre langues — comme « € » ou « TAEG ».
+ */
+export function formatMontantCompact(n: number, locale: Locale): string {
+  const absolu = Math.abs(n);
+  if (absolu < 1_000) return formatCurrency0(n, locale);
+  const [mantisse, suffixe] = absolu >= 1_000_000 ? [n / 1_000_000, " M\u20ac"] : [n / 1_000, " k\u20ac"];
+  // Une décimale seulement si elle porte une information: 1 000 000 -> « 1 M€ », pas « 1,0 M€ ».
+  const decimales = Math.abs(mantisse % 1) < 1e-9 ? 0 : 1;
+  return formatNumber(mantisse, locale, { minimumFractionDigits: decimales, maximumFractionDigits: decimales }) + suffixe;
+}
 export function formatList(items: string[], locale: Locale, type: "conjunction" | "disjunction" = "conjunction") {
   return normalizeIntlSpaces(new Intl.ListFormat(localeToIntl[locale], { style: "long", type }).format(items));
 }

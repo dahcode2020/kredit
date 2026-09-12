@@ -2,7 +2,9 @@ import { IsNumber, IsInt, IsEnum, IsOptional, IsString, IsDateString, Min, Max }
 import { Type } from 'class-transformer';
 import { IncomeType, EmploymentStatus, LoanPurpose, ProductType } from '../types/credit-engine.types';
 export class SimulateDto {
-  @Type(() => Number) @IsNumber() @Min(500) @Max(500000) amount!: number;
+  // Bornes = la grille entière (1 500 € … 30 M€), pas celles de l'ancien prêt personnel:
+  // un investisseur à 2 M€ recevait un 400 avant même d'être simulé.
+  @Type(() => Number) @IsNumber() @Min(1500) @Max(30000000) amount!: number;
   @Type(() => Number) @IsInt() @Min(6) @Max(360) termMonths!: number;
   @Type(() => Number) @IsNumber() @Min(0) @Max(100000) monthlyIncome!: number;
   @Type(() => Number) @IsNumber() @Min(0) @Max(100000) monthlyCharges!: number;

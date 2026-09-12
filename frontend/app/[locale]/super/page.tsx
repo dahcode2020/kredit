@@ -2,8 +2,14 @@
 import { Badge } from "@/components/ui/Button";
 import { Settings, Globe, Percent, FileText, Shield, Database, Bell, AlertTriangle, Lock } from "lucide-react";
 import { useState } from "react";
-export default function SuperPage(){
-  const [taeg, setTaeg] = useState("3.25");
+import { EFFECTIF_DEPUIS, PALIERS_TAUX, PRODUITS, PRODUCT_TYPES } from "@/lib/credit-engine";
+import { formatMontantCompact, formatPercent } from "@/lib/formatters";
+import { Locale, locales, t } from "@/lib/i18n";
+export default function SuperPage({ params }: { params: { locale: string } }){
+  const locale = (locales as readonly string[]).includes(params.locale) ? (params.locale as Locale) : "fr";
+  // Le champ « TAEG » de cet écran de config partait de 3.25 en dur: la valeur du 1er palier,
+  // lue dans la grille (un écran d'édition qui pré-remplit un taux périmé fait publier un taux périmé).
+  const [taeg, setTaeg] = useState((PALIERS_TAUX[0].taux * 100).toFixed(2));
   return (
     <div className="min-h-screen bg-surface">
       <div className="mx-auto max-w-[1280px] px-6 py-8">
@@ -21,21 +27,26 @@ export default function SuperPage(){
             <div className="bg-white rounded-2xl border p-6">
               <h3 className="font-bold text-ink flex items-center gap-2"><Percent className="w-4 h-4 text-primary"/> Produits & Taux (BE)</h3>
               <div className="mt-4 grid md:grid-cols-2 gap-4">
-                {[
-                  { name: "Personnel", range: "3,99% — 9,99%", min: "1 500€", max: "50 000€" },
-                  { name: "Hypothécaire", range: "3,25% — 5,50%", min: "50 000€", max: "500 000€" },
-                  { name: "Professionnel", range: "4,50% — 11%", min: "5 000€", max: "250 000€" },
-                ].map(p=>(
-                  <div key={p.name} className="rounded-2xl border p-4 bg-surface">
-                    <div className="font-bold text-ink">{p.name}</div>
-                    <div className="text-xs text-slate-500">{p.min} — {p.max} • TAEG {p.range}</div>
+                {PRODUCT_TYPES.map((code) => {
+                  const p = PRODUITS[code];
+                  // Bornes et taux lus dans la grille, plus dans un tableau de démonstration: cet
+                  // écran est précisément celui où un SUPER_ADMIN est censé les voir avant de les
+                  // modifier — trois lignes figées y affichaient 3,99 % — 9,99 % après le changement
+                  // de grille, c'est-à-dire une configuration fantôme.
+                  const mini = Math.min(...PALIERS_TAUX.filter(b => b.min <= p.max).map(b => b.taux));
+                  const maxi = Math.max(...PALIERS_TAUX.filter(b => b.min <= p.max).map(b => b.taux));
+                  return (
+                  <div key={code} className="rounded-2xl border p-4 bg-surface">
+                    <div className="font-bold text-ink">{t(locale, `products.${code.toLowerCase()}`)}</div>
+                    <div className="text-xs text-slate-500">{formatMontantCompact(p.min, locale)} — {formatMontantCompact(p.max, locale)} • TAEG {formatPercent(mini, locale, 2)} — {formatPercent(maxi, locale, 2)}</div>
                     <div className="mt-3 flex gap-2">
-                      <input defaultValue={p.range.split("—")[0].trim()} className="w-20 h-8 rounded-lg border px-2 text-xs"/>
+                      <input defaultValue={(mini*100).toFixed(2)} className="w-20 h-8 rounded-lg border px-2 text-xs"/>
                       <span className="text-xs py-2">—</span>
-                      <input defaultValue={p.range.split("—")[1].trim()} className="w-20 h-8 rounded-lg border px-2 text-xs"/>
+                      <input defaultValue={(maxi*100).toFixed(2)} className="w-20 h-8 rounded-lg border px-2 text-xs"/>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="mt-4 flex gap-2">
                 <input value={taeg} onChange={e=>setTaeg(e.target.value)} className="h-10 rounded-xl border px-3 text-sm w-32" placeholder="TAEG"/>
@@ -86,7 +97,7 @@ export default function SuperPage(){
             <div className="bg-white rounded-2xl border p-6">
               <h3 className="font-bold text-ink flex items-center gap-2"><Database className="w-4 h-4 text-primary"/> Audit & Logs</h3>
               <div className="mt-3 text-xs font-mono bg-ink text-white/80 rounded-xl p-3 overflow-auto max-h-[180px]">
-                <div>[2026-09-10T09:14:22Z] SUPER_ADMIN@42 — UPDATE product_rates BE PERSONAL 3.99%→4.10% hash:a3f9… prev:9c1e…</div>
+                <div>{`[${EFFECTIF_DEPUIS}T00:00:00Z] SUPER_ADMIN@42 — UPDATE product_rates BE ${PALIERS_TAUX.map((palier) => `${(palier.taux * 100).toFixed(2)}%`).join("→")} (grille ${PALIERS_TAUX.length} paliers) hash:a3f9… prev:9c1e…`}</div>
                 <div>[2026-09-10T09:10:01Z] ADMIN@18 — DECISION KRD-0842 APPROVED hash:7b2c…</div>
                 <div>[2026-09-10T08:55:11Z] SYSTEM — SCORING KRD-0842 grade B</div>
                 <div>[2026-09-10T08:54:00Z] CUSTOMER@101 — SUBMIT KRD-0842</div>

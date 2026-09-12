@@ -1,14 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import Decimal from 'decimal.js';
+import { tauxPour } from '../rules/grille.commerciale';
 /**
- * Moteur de simulation — pur, sans état, configurable.
- * AUCUNE règle en dur: lit les taux depuis DB/cache (injecté ici via ProductRatesRepository).
- * Pour la démo, taux par défaut BE injectés si non trouvés.
+ * Moteur de simulation de la route de démo — pur, sans état.
+ * Le taux n'est plus « par défaut »: il vient du même palier de montant que la règle validée par
+ * `CreditEngineService` (`grille.commerciale.ts`). Un montant hors grille est une erreur explicite,
+ * plus un 3,99 % silencieusement prêté à un emprunteur qui n'existe pas dans la grille.
  */
 @Injectable()
 export class SimulationService {
   simulate(dto: { amount: number; termMonths: number; productType?: string; country?: string }) {
-    const annual = dto.productType === 'MORTGAGE' ? 0.0325 : dto.productType === 'BUSINESS' ? 0.045 : 0.0399;
+    // Le taux vient de la grille par paliers, plus d'un ternaire par produit. Ce service est celui
+    // exposé par POST /api/v1/simulation: pendant qu'il gardait ses 3,25/3,99/4,50 en dur, la grille
+    // validée par CreditEngineService était ignorée ici — deux taux différents sur deux endpoints.
+    const annual = tauxPour(dto.amount);
+    if (annual === null) {
+      throw new BadRequestException({ code: 'HORS_GRILLE', message: `Aucun palier de taux pour ${dto.amount} EUR (grille BE: 1 500 EUR à 30 000 000 EUR)` });
+    }
     const r = new Decimal(annual).div(12);
     const principal = new Decimal(dto.amount);
     const n = dto.termMonths;

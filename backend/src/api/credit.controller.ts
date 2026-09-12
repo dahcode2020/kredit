@@ -33,7 +33,12 @@ export class CreditController {
   @ApiResponse({ status: 201 }) @ApiResponse({ status: 422 })
   @HttpCode(201)
   async sim(@Body() dto: SimDto) {
-    return { id: 'sim_9c1e', simulation: { monthlyPayment: 338.62, annualRate: 0.0421, taeg: 0.0421, totalInterest: 1414, fees: { file: 150 }, totalCost: 16414, schedule: [], disclaimer: 'Simulation ≠ offre', meta: { country: 'BE', product: 'PERSONAL', rateRuleId: 'rate_BE_PERSONAL_10001_25000', generatedAt: new Date().toISOString() } }, eligibility: { isEligible: true, debtRatio: 0.384, repaymentCapacity: 1711 }, score: { value: 62, grade: 'C' }, recommendation: 'REVIEW_RECOMMENDATION' };
+    // Payload d'exemple fige (ce contrôleur est un stub sans base de données). Ses chiffres sont ceux
+    // de la grille en vigueur pour 15 000 EUR / 48 mois a 2,50 % — mensualite 328,71 EUR, frais de
+    // dossier 150 EUR (1 % plafonne), TAEG 2,75 %. `tests/unit/credit-tiers.spec.ts` verifie cote
+    // frontend que le `rateRuleId` cite ici existe bien dans la grille generee: un id perime est
+    // exactement ce qui rend une reponse de demo indiscernable d'une reponse fausse.
+    return { id: 'sim_9c1e', simulation: { monthlyPayment: 328.71, annualRate: 0.025, taeg: 0.0275, totalInterest: 778.1, fees: { file: 150 }, totalCost: 15928.1, schedule: [], disclaimer: 'Simulation ≠ offre', meta: { country: 'BE', product: 'PERSONAL', rateRuleId: 'rate_BE_PERSONAL_1500_50000', generatedAt: new Date().toISOString() } }, eligibility: { isEligible: true, debtRatio: 0.2257, repaymentCapacity: 3871 }, score: { value: 95, grade: 'A' }, recommendation: 'APPROVE_RECOMMENDATION' };
   }
 
   @Get('simulations/:id')

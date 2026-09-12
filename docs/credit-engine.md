@@ -9,7 +9,7 @@
 
 ```
                 ┌─────────────┐
-                │ CreditProduct│  (BE, PERSONAL, 1 500-50 000€, 12-84m, active, v3)
+                │ CreditProduct│  (BE, PERSONAL, 1 500-200 000 €, 12-84m, active, v4)
                 └──────┬──────┘
                        │
                 ┌──────▼──────┐
@@ -75,11 +75,50 @@ Enums: `IncomeType = SALARY|SELF_EMPLOYED|PENSION|UNEMPLOYMENT|OTHER`, `Employme
 
 ## 3. Configurabilité
 
-**CreditProduct** BE: `minAmount 1500 max 50000 minTerm12 max84 version3 effectiveFrom 2026-01-01`
+### Grille commerciale en vigueur (BE, effet 2026-09-12)
 
-**RateRule** bande: `minAmount/maxAmount/minTerm/maxTerm/baseRate 0.0399 fees {filePct 0.01 fileMin75 fileMax300} effectiveFrom`
+Le taux n'est plus attaché au produit : il est attaché à une **tranche de montant**, identique pour les
+quatre produits. Le produit ne porte que ses bornes, sa durée et ses frais.
 
-Moteur choisit bande `contains(amount,term)` + `max(effectiveFrom)`. Si aucune → `NO_RATE_RULE`.
+| Tranche de montant | Taux nominal |
+| --- | --- |
+| 1 500 € — 50 000 € | 2,50 % |
+| 50 001 € — 500 000 € | 1,90 % |
+| 500 001 € — 1 000 000 € | 1,80 % |
+| au-delà de 1 000 000 € | 1,50 % |
+
+| Produit | Montant | Durée | Pas du curseur |
+| --- | --- | --- | --- |
+| Personnel | 1 500 € — 200 000 € | 12–84 mois | 250 € |
+| Hypothécaire | 20 000 € — 1 000 000 € | 60–300 mois | 5 000 € |
+| Professionnel | 20 000 € — 3 000 000 € | 12–120 mois | 10 000 € |
+| Investissement | 200 000 € — 30 000 000 € | 24–240 mois | 50 000 € |
+
+**Où est cette table — une seule fois.** `backend/src/credit/rules/grille.commerciale.ts` (source de
+vérité, `PRODUITS` × `PALIERS_TAUX`) et son miroir frontend `frontend/lib/credit-engine.ts`. Les
+`RateRule` des deux côtés sont **générées** par intersection des deux tables, donc un produit ou une
+borne ajouté ne peut plus oublier sa tranche de taux. Les identifiants qui en sortent
+(`rate_BE_PERSONAL_50001_200000`) sont stables et cités dans `meta.rateRuleId` et dans l'audit.
+
+Elle était en **six exemplaires** avant cela (moteur, service de règles, deux `SimulationService` de
+démo avec leur propre ternaire, trois tuiles de l'accueil, trois cartes de `/credit`, la table de
+`/super`, douze descriptions de dictionnaires) — ce qui explique qu'un changement de taux n'ait jamais
+été visible partout. Le verrou est désormais un test, pas une habitude :
+`frontend/tests/unit/credit-tiers.spec.ts` compare les deux fichiers table à table, interdit tout
+pourcentage écrit à la main dans le JSX des quatre fichiers concernés, et vérifie que la
+`rateRuleId` du payload de démonstration du contrôleur existe dans la grille.
+
+**CreditProduct** BE : `minAmount 1500 max 200000 minTerm 12 maxTerm 84 version 4 effectiveFrom 2026-09-12`
+
+**RateRule** générée : `minAmount/maxAmount/minTerm/maxTerm/baseRate (lu au palier) fees {filePct, fileMin, fileMax du produit} effectiveFrom`
+
+Moteur choisit la bande `contains(amount, term)` + `max(effectiveFrom)`. Si aucune → `NO_RATE_RULE`
+(et `HORS_GRILLE` sur la route de démo) : pas de taux par défaut, jamais.
+
+Un effet de bord à connaître parce qu'il surprend en démo : sur un petit montant, le **frais minimum de
+dossier** domine le TAEG — 1 500 € sur 12 mois à 2,50 % donne un TAEG de 7,50 %, parce que 75 € de
+frais sur un an pèsent 5 %. Ce n'est pas une erreur d'arrondi, c'est le coût réel du produit ; le
+formateur `formatPercent` l'affiche tel quel, et c'est ce que le SECCI imposerait de montrer.
 
 **CreditRule** exemples:
 `{key:"max_debt_ratio", value:0.33, isHard:false, country:"BE", needsLegalValidation:true}`

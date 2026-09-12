@@ -287,11 +287,16 @@ test('landing a11y', async ({page}) => {
 
 | Cas | Entrée | Attendu | Test |
 |-----|--------|---------|------|
-| **Min amount** | 1 500€ PERSONAL 12m | 201 (bande 1500-10000) mensualité ≈128,99€ | unit |
-| **Max amount** | 50 000€ PERSONAL 84m | 201 | unit |
-| **>Max** | 50 001€ PERSONAL 48m | 400 NO_RATE_RULE | unit |
-| **Min term** | 12m 15k | mensualité 1 276€ (taeg 3,99%) | unit |
-| **Max term** | 300m MORTGAGE 200k 3,25% | mens ≈ 870€ schedule 300 | unit |
+| **Min amount** | 1 500€ PERSONAL 12m | 201, mensualité 126,70€, TAEG 7,50 % (frais minimum de 75 € sur un an) | unit |
+| **Max amount** | 200 000€ PERSONAL 84m | 201, mensualité 2 544,68€, règle `rate_BE_PERSONAL_50001_200000` | unit |
+| **>Max** | 200 001€ PERSONAL 48m | `NO_RATE_RULE` — hors grille, donc **aucun** taux prêté | unit |
+| **Min term** | 12m 15k PERSONAL | mensualité 1 266,99€ au 1er palier (2,50 %) | unit |
+| **Max term** | 300m MORTGAGE 1 000 000€ | mensualité 4 141,85€, schedule 300, palier 1,80 % | unit |
+| **Réglette** | 0 … 1000 sur chaque produit | min et max atteignables exactement, monotone, multiple du pas, chaque palier réglable | unit |
+
+Les valeurs attendues ci-dessus sont celles de la grille du 12/09/2026 ; la source de vérité reste
+`frontend/lib/credit-engine.ts` (miroir de `backend/src/credit/rules/grille.commerciale.ts`), et
+`frontend/tests/unit/credit-tiers.spec.ts` est ce qui empêche les deux de décrocher.
 | **Revenus nuls** | 0€ | `debtRatio Infinity` → hardFail `charges_vs_income` → REJECT | unit/eligibility |
 | **Charges > revenus** | 3000 vs 3200 + 900 charges +250 crédits +338 mens → cap >90% → hard REJECT | unit |
 | **Demande incomplète** | `without termMonths` → 422 Validation `forbidNonWhitelisted` | api |

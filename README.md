@@ -61,10 +61,26 @@ désenregistre le worker hérité et purge les caches `kredit-*`, le second est 
 rechargement laisse encore l'overlay, la panne n'est plus réparable depuis le dépôt — envoyer la
 première ligne rouge de la Console (pas les suivantes) et la sortie de `check:assets`.
 
-**Comptes de démo (front mock):**
-- `customer@kredit.be / Customer123!` → `/fr/dashboard`
-- `admin@kredit.be / Admin123!` → `/fr/admin`
-- `super@kredit.be / Super123!` → `/fr/super`
+**Portail client — `/fr/auth` (même écran en EN/NL/DE)**
+
+Connexion *et* inscription sur un seul écran, pour les trois rôles. Comptes de démo (le formulaire les
+propose en un clic, ils remplissent e-mail et mot de passe) :
+
+| Compte | Mot de passe | Après connexion | Second facteur |
+| --- | --- | --- | --- |
+| `customer@kredit.be` | `Customer123!` | `/fr/dashboard` | non |
+| `admin@kredit.be` | `Admin123!` | `/fr/admin/dashboard` | oui — code `123456` |
+| `super@kredit.be` | `Super123!` | `/fr/super` | oui — code `123456` |
+
+Le rôle vient du **compte**, jamais du sélecteur d'interface : la puce « Client / Admin / Super » ne
+fait qu'annoncer le second facteur et filtrer la liste de démo. Flux complet, validation, MFA et
+pourquoi ces choix dans `docs/auth.md`.
+
+**Du simulateur à la demande** — le CTA en bas du simulateur enregistre le brouillon (montant, durée,
+revenus, charges, crédits, produit, objet, plus le résultat lu) et ouvre `/fr/demande` : un formulaire
+en quatre étapes **pré-rempli**, dont le panneau de droite recalcule mensualité, TAEG et score à chaque
+frappe. Le compte se crée à la première étape si le visiteur n'en a pas encore. Rien n'est resaisi, et
+le dépôt ne persiste pas les données personnelles — seul le brouillon survit à un rechargement.
 
 > La PWA est installable (manifest + sw.js). Offline shell + cache fonds critiques.
 
@@ -197,6 +213,10 @@ server`, et l'UI « repart à zéro » au refresh.
 
 - Règles et correctifs appliqués : [`docs/hydration.md`](docs/hydration.md)
 - Garde-fou statique (zéro dépendance) : `npm --prefix frontend run check:hydration`
+- Portail client, rôles, MFA et pont simulation → demande : `docs/auth.md`
+- Mouvement & animation (couche maison, sans dépendance) : `docs/motion.md` — primitives dans
+  `frontend/lib/motion.ts` et `frontend/components/motion/`, vocabulaire CSS dans `app/globals.css`,
+  quatre règles de garde dans `check:hydration`
 - Harnais de vérification réel (jsdom, simule le décalage de CLDR serveur/navigateur) :
   `npm --prefix frontend run check:hydrate -- --skew-intl`
 

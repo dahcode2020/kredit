@@ -18,9 +18,14 @@ try {
 } catch {}
 
 // Mock matchMedia for PWA tests
-if (typeof window !== 'undefined' && !window.matchMedia) {
+if (typeof window !== 'undefined') {
+  // Defini MEME quand jsdom en fournit un: celui de jsdom est non configurable, et un composant qui
+  // lit `prefers-reduced-motion` ne peut alors etre teste dans les deux etats qu'en le remplacant.
+  // Le comportement par défaut reste celui de jsdom (`matches: false`), donc les specs PWA existantes
+  // ne voient rien changer — seules celles qui posent leur propre `mockImplementation` le peuvent.
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
+    configurable: true,
     value: jest.fn().mockImplementation((query: string) => ({
       matches: false,
       media: query,

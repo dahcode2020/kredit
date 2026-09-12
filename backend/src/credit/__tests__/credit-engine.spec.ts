@@ -14,10 +14,10 @@ function createEngine() {
   return { engine, rules };
 }
 describe('CreditEngine', () => {
-  it('simulation French — 15k 48m 3.99% ≈ 338.62', () => {
+  it('simulation — 15k 48m au 1er palier (2,50 %) ≈ 328,71', () => {
     const { engine } = createEngine();
     const out = engine.simulate({ amount:15000, termMonths:48, monthlyIncome:5000, monthlyCharges:800, incomeType:'SALARY', employmentStatus:'CDI', loanPurpose:'VEHICLE', existingCreditsMonthly:0, country:'BE', productType:'PERSONAL' });
-    expect(out.simulation.monthlyPayment).toBeCloseTo(338.62, 0);
+    expect(out.simulation.monthlyPayment).toBeCloseTo(328.71, 0);
     expect(out.simulation.schedule.length).toBe(48);
     expect(out.simulation.totalCost).toBeGreaterThan(15000);
     expect(out.simulation.disclaimer).toContain('indicative');
@@ -31,9 +31,9 @@ describe('CreditEngine', () => {
   it('REJECT if hard max_amount exceeded (NO_RATE_RULE)', () => {
     const { engine } = createEngine();
     let threw = false;
-    try { engine.simulate({ amount:50001, termMonths:48, monthlyIncome:8000, monthlyCharges:500, incomeType:'SALARY', employmentStatus:'CDI', loanPurpose:'VEHICLE', existingCreditsMonthly:0, country:'BE', productType:'PERSONAL' }); } catch(e:any){ threw = true; expect(JSON.stringify(e).includes('NO_RATE_RULE')).toBeTruthy(); }
+    try { engine.simulate({ amount:250000, termMonths:84, monthlyIncome:8000, monthlyCharges:500, incomeType:'SALARY', employmentStatus:'CDI', loanPurpose:'VEHICLE', existingCreditsMonthly:0, country:'BE', productType:'PERSONAL' }); } catch(e:any){ threw = true; expect(JSON.stringify(e).includes('NO_RATE_RULE')).toBeTruthy(); }
     expect(threw).toBe(true);
-    const near = engine.simulate({ amount:49000, termMonths:48, monthlyIncome:8000, monthlyCharges:500, incomeType:'SALARY', employmentStatus:'CDI', loanPurpose:'VEHICLE', existingCreditsMonthly:0, country:'BE', productType:'PERSONAL' });
+    const near = engine.simulate({ amount:190000, termMonths:84, monthlyIncome:20000, monthlyCharges:500, incomeType:'SALARY', employmentStatus:'CDI', loanPurpose:'VEHICLE', existingCreditsMonthly:0, country:'BE', productType:'PERSONAL' });
     expect(near.warnings.some(w=>w.code==='AT_CEILING')).toBeTruthy();
     expect(near.eligibility.isEligible).toBe(true);
   });

@@ -8,9 +8,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ConnectivityDot } from "@/components/pwa/ConnectivityStatus";
 import { useAuth, useAuthHydrated } from "@/hooks/useAuth";
+import { useSeuilScroll } from "@/lib/motion";
 
 export default function Header({ locale }: { locale: Locale }) {
   const [open, setOpen] = useState(false);
+  // Un booléen, une classe CSS : l'en-tête ne doit pas re-render pendant le scroll.
+  const auDessus = useSeuilScroll(12);
   const [langOpen, setLangOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -51,7 +54,10 @@ export default function Header({ locale }: { locale: Locale }) {
     };
   }, [langOpen]);
   return (
-    <header className="fixed top-0 inset-x-0 z-50 bg-ink/95 backdrop-blur border-b border-white/5">
+    <header
+      data-scrolled={auDessus ? "true" : "false"}
+      className="header-elevate fixed top-0 inset-x-0 z-50 bg-ink/95 backdrop-blur border-b border-white/5"
+    >
       <div className="mx-auto max-w-[1280px] px-6 h-[72px] flex items-center justify-between">
         <Link href={`/${locale}`} className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white font-extrabold text-sm">K</div>
@@ -132,7 +138,7 @@ export default function Header({ locale }: { locale: Locale }) {
             </>
           ) : (
             <>
-              <Link href={`/${locale}#auth`} className="text-white/90 hover:text-white text-[13px] font-semibold whitespace-nowrap hidden xl:inline"> {tr("nav.login")} </Link>
+              <Link href={`/${locale}/auth`} className="text-white/90 hover:text-white text-[13px] font-semibold whitespace-nowrap hidden xl:inline"> {tr("nav.login")} </Link>
               <Link href={`/${locale}#simulateur`} className={buttonClasses("primary", "md", "!h-9 !px-5 !text-[13px] whitespace-nowrap shrink-0")}>{tr("nav.cta")}</Link>
             </>
           )}
@@ -144,7 +150,7 @@ export default function Header({ locale }: { locale: Locale }) {
       </div>
 
       {open && (
-        <div className="lg:hidden bg-ink border-t border-white/10 px-6 py-6 space-y-5">
+        <div className="motion-menu lg:hidden bg-ink border-t border-white/10 px-6 py-6 space-y-5">
           {/* User pill mobile when authenticated */}
           {hasHydrated && isAuthenticated && user && (
             <div className="rounded-2xl bg-white p-4 flex items-center gap-3">
@@ -194,7 +200,7 @@ export default function Header({ locale }: { locale: Locale }) {
               <button onClick={handleLogout} className="h-11 rounded-full bg-white text-ink font-semibold flex items-center justify-center gap-2"><LogOut className="w-4 h-4"/> {tr("shell.logout")}</button>
             ) : (
               <>
-                <Link href={`/${locale}#auth`} onClick={()=>setOpen(false)} className="h-11 rounded-full bg-white/10 border border-white/15 text-white font-semibold grid place-items-center">{tr("nav.login")}</Link>
+                <Link href={`/${locale}/auth`} onClick={()=>setOpen(false)} className="h-11 rounded-full bg-white/10 border border-white/15 text-white font-semibold grid place-items-center">{tr("nav.login")}</Link>
                 <Link href={`/${locale}#simulateur`} onClick={()=>setOpen(false)} className={buttonClasses("primary", "md", "w-full !h-11")}>{tr("nav.cta")}</Link>
               </>
             )}

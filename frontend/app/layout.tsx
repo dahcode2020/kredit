@@ -64,6 +64,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // suppressHydrationWarning est légitime ICI uniquement (attribut muté hors React).
     <html lang="fr" suppressHydrationWarning>
       <head>
+        {/* Repli sans JavaScript: `[data-reveal]` garde le contenu à `opacity: 0` jusqu'à ce qu'un
+            observateur le libère. Sans JS, personne ne le libère — cette règle est donc la seule qui
+            rend la page lisible à un crawler sans moteur, à un bloqueur de scripts, et à l'impression.
+            Elle vit dans le <head>, où <style> est permis et hors du corps que React réconcilie. */}
+        <noscript>
+          <style>{`[data-reveal]{opacity:1!important;transform:none!important;filter:none!important}`}</style>
+        </noscript>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
