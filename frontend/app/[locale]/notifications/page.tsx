@@ -3,6 +3,7 @@ import CustomerShell from "@/components/customer/CustomerShell";
 import { Locale } from "@/lib/i18n";
 import { mockNotifs } from "@/lib/mock";
 import { Bell, Mail, MessageCircle, Smartphone } from "lucide-react";
+import RelativeTime from "@/components/ui/RelativeTime";
 import { useState } from "react";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
@@ -34,7 +35,7 @@ export default function Page({ params }: { params:{locale:string}}) {
             {list.map(n=>(
               <div key={n.id} className={`p-4 flex gap-3 ${n.read?'':'bg-amber-50'}`}>
                 <div className="w-10 h-10 rounded-full bg-ink text-white grid place-items-center text-xs">{n.channel[0]}</div>
-                <div className="flex-1"><div className="text-sm font-bold">{n.title}</div><div className="text-sm text-slate-600">{n.body}</div><div className="text-xs text-slate-400">{n.date}</div></div>
+                <div className="flex-1"><div className="text-sm font-bold">{n.title}</div><div className="text-sm text-slate-600">{n.body}</div><div className="text-xs text-slate-400"><RelativeTime date={n.date} locale={locale} /></div></div>
                 <button onClick={()=>setList(list.map(x=>x.id===n.id? {...x, read:!x.read}:x))} className="text-xs font-bold text-primary">{n.read?'Marquer non lu':'Marquer lu'}</button>
               </div>
             ))}

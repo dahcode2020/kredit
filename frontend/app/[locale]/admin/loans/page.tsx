@@ -1,17 +1,18 @@
 "use client";
 import AdminShell from "@/components/admin/AdminShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, t } from "@/lib/i18n";
 import { Wallet } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
+  const tr = (k: string, vars?: Record<string, any>) => t(locale, `admin:${k}`, vars);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-4">
-        <h1 className="text-[22px] font-extrabold text-ink">Prêts actifs (6 800)</h1>
+        <h1 className="text-[22px] font-extrabold text-ink">{tr("loans.active")} (6 800)</h1>
         <div className="bg-white rounded-2xl border overflow-hidden">
           <div className="overflow-auto">
             <table className="w-full text-sm">
-              <thead className="text-xs tracking-widest uppercase text-slate-500 border-b bg-surface/50"><tr><th className="text-left p-3">Prêt</th><th>Client</th><th>Montant</th><th>Échéance</th><th>Retard</th></tr></thead>
+              <thead className="text-xs tracking-widest uppercase text-slate-500 border-b bg-surface/50"><tr><th className="text-left p-3">{tr("loans.colLoan")}</th><th>{tr("loans.colClient")}</th><th>{tr("loans.colAmount")}</th><th>{tr("loans.colDue")}</th><th>{tr("loans.colLate")}</th></tr></thead>
               <tbody className="divide-y">
                 {[
                   {id:'KRD-0799', client:'Alex Martin', amount:'25 000€', next:'01/10 463€', late:'—'},

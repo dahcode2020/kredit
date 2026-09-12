@@ -5,6 +5,11 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   images: {
+    // En dev seulement: le composant passe par /_next/image, qui relaie l'appel distant
+    // depuis le serveur. Hors du réseau (sandbox, CI, poste derrière un proxy qui bloque
+    // images.unsplash.com), chaque visuel répond 500 et Next affiche une overlay d'erreur
+    // par-dessus une page pourtant correcte. En production l'optimisation serveur reste active.
+    unoptimized: process.env.NODE_ENV !== "production",
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }, { protocol: "https", hostname: "i.pravatar.cc" }],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -42,10 +47,17 @@ const nextConfig = {
         source: "/icons/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
-      {
-        source: "/_next/static/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-      },
+      ...(process.env.NODE_ENV === "production"
+        ? [
+            {
+              // En dev, ces URLs sont stables et réécrites à chaque compile: les déclarer
+              // « immutable » autorise le cache (navigateur, puis service worker) à figer un
+              // runtime webpack périmé -> « reading 'call' » au premier reload après un rebuild.
+              source: "/_next/static/:path*",
+              headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+            },
+          ]
+        : []),
     ];
   },
   // Redirects: ensure offline is reachable

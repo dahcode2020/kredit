@@ -5,7 +5,7 @@ import { mockAdminApps } from "@/lib/mockAdmin";
 import { useState, useEffect } from "react";
 import { ShieldCheck, AlertTriangle, FileText, Clock, Check, X, Eye } from "lucide-react";
 import { formatEUR2 } from "@/lib/utils";
-import { formatDateTime, localeToIntl } from "@/lib/formatters";
+import { formatDateTime } from "@/lib/formatters";
 export default function Page({ params }: { params:{locale:string, id:string}}) {
   const locale = params.locale as Locale;
   const app = mockAdminApps.find(a=>a.id===params.id) || mockAdminApps[0];
@@ -16,8 +16,8 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
   const [decidedAt, setDecidedAt] = useState<string>("");
   useEffect(() => {
     if (decided) setDecidedAt(formatDateTime(new Date(), locale));
-  }, [decided]);
-  const eur = (v: number) => formatEUR2(v, localeToIntl[locale]);
+  }, [decided, locale]);
+  const eur = (v: number) => formatEUR2(v, locale);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="max-w-[1100px] space-y-6">
@@ -102,7 +102,7 @@ export default function Page({ params }: { params:{locale:string, id:string}}) {
                       <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
                         <div className="text-xs font-bold text-amber-800">Règles non satisfaites: max_debt_ratio 38.4% &gt; 33% (valeur 0.384 seuil 0.33)</div>
                         <textarea value={exception} onChange={e=>setException(e.target.value)} placeholder="Motif obligatoire 20-2000 chars (ex: Client historique 10 ans, garanties...)" rows={3} className="w-full rounded-xl border px-3 py-2 text-sm"/>
-                        <label className="flex gap-2 text-xs"><input type="checkbox" required/> J'ai vérifié les règles ci-dessus</label>
+                        <label className="flex gap-2 text-xs"><input type="checkbox" required/> J&#39;ai vérifié les règles ci-dessus</label>
                         <button onClick={()=>{ if(exception.trim().length<20) return alert('Motif 20-2000 requis'); if(app.amount>50000) alert('SUPER_ADMIN requis >50k — 403 si ADMIN'); setDecided('APPROVED_WITH_EXCEPTION'); }} className="w-full h-9 rounded-full bg-amber-600 text-white text-sm font-bold">Confirmer exception</button>
                         <p className="text-[11px] text-amber-700">Enregistre admin, date/heure, règles, valeurs, motif, décision → history.metadata + audit hash.</p>
                       </div>

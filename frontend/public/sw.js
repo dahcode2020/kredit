@@ -1,12 +1,19 @@
 // KREDIT PWA — Service Worker v2
 // Strategies:
-// - STATIC_ASSETS: CacheFirst (immutable, long-lived)
+// - STATIC_ASSETS: CacheFirst (uniquement les URLs porteuses d'un hash de build)
 // - PUBLIC_CONTENT: StaleWhileRevalidate (marketing, legal, simulator shell)
 // - AUTHENTICATED_CONTENT: NetworkFirst with offline fallback (no persistent cache of personal data)
 // - FINANCIAL_DATA: NetworkOnly (never cache — payments, credit, investments API & docs)
 // Never cache financial/personal sensitive data without encryption — per requirement.
 
-const VERSION = 'kredit-v5'; // v5: ne plus jamais mettre de HTML en cache (hydration mismatch après déploiement)
+const VERSION = 'kredit-v8'; // v5: jamais de HTML en cache • v6: manifeste par locale • v7: jamais de chunk non haché en cache
+// v7: un chunk dont l'URL ne porte pas de hash de build (/_next/static/chunks/webpack.js, main-dev.js,
+// app/…/page.js, webpack-hmr) est réécrit à chaque compile. Le servir depuis un cache CacheFirst fige un
+// runtime webpack pendant que les chunks viennent d'une compile plus récente: les ids de modules ne
+// correspondent plus et le navigateur lève « TypeError: Cannot read properties of undefined (reading 'call') »
+// dans options.factory (webpack.js). Ce n'était pas propre qu'au dev: une page ouverte avant un déploiement
+// pouvait déjà le déclencher. Le worker ne touche donc plus ces URLs, et n'écrit en cache que ce que le
+// serveur déclare réellement durable (voir reponseCacheable).
 const STATIC_CACHE = `kredit-static-${VERSION}`;
 const PUBLIC_CACHE = `kredit-public-${VERSION}`;
 const OFFLINE_CACHE = `kredit-offline-${VERSION}`;
@@ -26,13 +33,33 @@ const PRECACHE_URLS = [
 ];
 
 // ---------- Helpers: strategy classification ----------
+// Une URL d'asset n'est durable qu'avec un hash de build dans son nom de fichier
+// (main-4c9c1e9bb24fb188.js, css/2aa1e6b2a8c8b4c4.css). Sans hash: contenu instable -> jamais de cache.
+const FICHIER_HACHE = /\/[^/]*[0-9a-f]{8,}[^/]*\.[a-z]+$/i;
+function assetHache(pathname) {
+  return FICHIER_HACHE.test(pathname);
+}
+
+// Le serveur est la seule autorité qui sait si une réponse mérite le cache: en dev il répond
+// no-store, et les réponses d'erreur/302 n'y ont rien à faire.
+function reponseCacheable(res) {
+  if (!res || !res.ok) return false;
+  let cc = '';
+  try { cc = (res.headers.get('cache-control') || '').toLowerCase(); } catch (_) { cc = ''; }
+  if (/no-store|no-cache|max-age=0\b/.test(cc)) return false;
+  if (cc.indexOf('immutable') !== -1) return true;
+  const maxAge = /max-age=(\d+)/.exec(cc);
+  return !!maxAge && Number(maxAge[1]) >= 3600;
+}
+
 function isStaticAsset(req) {
   const url = new URL(req.url);
-  if (url.pathname.startsWith('/_next/static/')) return true;
+  if (url.pathname.startsWith('/_next/')) return url.pathname.startsWith('/_next/image') || assetHache(url.pathname);
   if (url.pathname.startsWith('/_next/image')) return true;
   if (url.pathname.startsWith('/icons/')) return true;
   if (url.pathname.startsWith('/screenshots/')) return true;
   if (url.pathname === '/manifest.json') return true;
+  if (url.pathname.startsWith('/manifest/')) return true; // manifeste par locale (route statique)
   if (url.pathname === '/sw.js') return true;
   const dest = req.destination;
   if (['style', 'script', 'font', 'image'].includes(dest)) return true;
@@ -83,13 +110,35 @@ function isPublicContent(req) {
   return false;
 }
 
+function isNavigate(req) {
+  return req.mode === 'navigate' || req.destination === 'document';
+}
+
+// Toute réponse confisquée au réseau doit être une Response. Un appelant qui renvoie `undefined`,
+// `null` ou qui rejette fait échouer la requête interceptée avec « Failed to convert value to
+// 'Response' » — c'est-à-dire: le worker transforme une panne réseau en page blanche.
+async function versResponse(valeur) {
+  if (valeur instanceof Response) return valeur;
+  if (valeur && typeof valeur.then === 'function') {
+    try {
+      const res = await valeur;
+      if (res instanceof Response) return res;
+    } catch (_) { return Response.error(); }
+  }
+  return Response.error();
+}
+
+function repondre(event, valeur) {
+  event.respondWith(versResponse(valeur));
+}
+
 // ---------- Cache strategies ----------
 async function cacheFirst(req, cacheName) {
   const cached = await caches.match(req);
   if (cached) return cached;
   try {
     const res = await fetch(req);
-    if (res && res.ok) {
+    if (reponseCacheable(res)) {
       const cache = await caches.open(cacheName);
       cache.put(req, res.clone());
     }
@@ -104,12 +153,18 @@ async function staleWhileRevalidate(req, cacheName) {
   const cached = await caches.match(req);
   const fetchPromise = fetch(req).then((res) => {
     // HTML (document ou RSC) jamais SWR: seul le statique (images, fonts, chunks hachés) est revalidé
-    if (res && res.ok && !(res.headers.get('content-type') || '').includes('text/html')) {
+    if (reponseCacheable(res) && !(res.headers.get('content-type') || '').includes('text/html')) {
       cache.put(req, res.clone());
     }
     return res;
   }).catch(() => null);
-  return cached || (await fetchPromise) || fetchPromise;
+  // Ne JAMAIS résoudre autre chose qu'une Response: `cached || (await p) || p` renvoyait le
+  // promise elle-même (objet truthy) quand le réseau échouait sans cache — respondWith recevait
+  // alors `null` et le navigateur jetait « Failed to convert value to 'Response' », tuant la
+  // requête qui aurait pu récupérer le chunk manquant.
+  if (cached) return cached;
+  const fresh = await fetchPromise;
+  return fresh || Response.error();
 }
 
 // cacheName est conservé pour la signature des appels; le HTML n'y est jamais écrit.
@@ -135,6 +190,9 @@ async function networkFirst(req, cacheName, timeoutMs = 4000) {
     }
     const cached = await caches.match(req);
     if (cached) return cached;
+    // Réponse de secours pour les requêtes non-navigables: une vraie Response (Response.error()
+    // se comporte comme une coupure réseau vue de la page) et jamais un rejet nu.
+    if (!isNavigate(req) && !(req.url || '').includes('/api/')) return Response.error();
     // For API, return structured offline response
     if (req.url.includes('/api/')) {
       return new Response(JSON.stringify({ statusCode: 503, code: 'OFFLINE', message: 'Connexion requise — opération nécessite le serveur. Données financières non mises en cache par sécurité.' }), {
@@ -142,7 +200,7 @@ async function networkFirst(req, cacheName, timeoutMs = 4000) {
         headers: { 'Content-Type': 'application/json', 'X-KREDIT-Offline': '1' }
       });
     }
-    throw e;
+    return Response.error();
   }
 }
 
@@ -164,7 +222,7 @@ async function networkOnly(req) {
         headers: { 'Content-Type': 'application/json', 'X-KREDIT-Cache-Strategy': 'FINANCIAL_DATA', 'X-KREDIT-Offline': '1' }
       });
     }
-    throw e;
+    return Response.error();
   }
 }
 
@@ -207,16 +265,23 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
 
+  // Interne au bundler (chunks de dev sans hash, HMR, _buildManifest/_next/image除外):
+  // on ne l'intercepte PAS du tout — c'est exactement ce qui casse le runtime quand une
+  // recompilation change la table des modules sous les pieds d'un chunk déjà servi.
+  if (url.pathname.startsWith('/_next/') && !url.pathname.startsWith('/_next/image') && !assetHache(url.pathname)) {
+    return;
+  }
+
   // Payloads RSC (navigations client-side Next) : cohérence stricte avec le document → réseau, jamais de cache.
   if (url.searchParams.has('_rsc') || req.headers.get('RSC') === '1') {
-    event.respondWith(networkOnly(req));
+    repondre(event, networkOnly(req));
     return;
   }
 
   // Only handle GET for caching; other methods always networkOnly
   if (req.method !== 'GET') {
     // Financial mutations must always hit server
-    event.respondWith(networkOnly(req));
+    repondre(event, networkOnly(req));
     return;
   }
 
@@ -224,7 +289,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) {
     // Allow caching of unsplash/CDN images as static (optional)
     if (req.destination === 'image' && url.hostname.includes('images.unsplash.com')) {
-      event.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
+      repondre(event, staleWhileRevalidate(req, STATIC_CACHE));
       return;
     }
     return; // let browser handle
@@ -232,7 +297,7 @@ self.addEventListener('fetch', (event) => {
 
   // FINANCIAL_DATA — never cache
   if (isFinancialData(req)) {
-    event.respondWith(
+    repondre(event, 
       networkOnly(req)
     );
     return;
@@ -240,11 +305,11 @@ self.addEventListener('fetch', (event) => {
 
   // STATIC_ASSETS — CacheFirst (uniquement des URLs hachées/immuables)
   if (isStaticAsset(req)) {
-    event.respondWith(
+    repondre(event, 
       (async () => {
         // Try preload response first
         const preload = await event.preloadResponse;
-        if (preload && preload.ok && !(preload.headers.get('content-type') || '').includes('text/html')) {
+        if (reponseCacheable(preload) && !(preload.headers.get('content-type') || '').includes('text/html')) {
           const cache = await caches.open(STATIC_CACHE);
           cache.put(req, preload.clone());
           return preload;
@@ -257,17 +322,17 @@ self.addEventListener('fetch', (event) => {
 
   // AUTHENTICATED_CONTENT — NetworkFirst (no persistent sensitive cache)
   if (isAuthenticatedContent(req)) {
-    event.respondWith(networkFirst(req, PUBLIC_CACHE, 5000));
+    repondre(event, networkFirst(req, PUBLIC_CACHE, 5000));
     return;
   }
 
   // PUBLIC_CONTENT — navigation: toujours le réseau (document frais), fallback = page offline
   if (isPublicContent(req)) {
     if (req.mode === 'navigate') {
-      event.respondWith(
+      repondre(event, 
         (async () => {
           const preload = await event.preloadResponse;
-          if (preload && !(preload.headers.get('content-type') || '').includes('text/html')) {
+          if (reponseCacheable(preload) && !(preload.headers.get('content-type') || '').includes('text/html')) {
             const cache = await caches.open(PUBLIC_CACHE);
             cache.put(req, preload.clone());
             return preload;
@@ -278,16 +343,16 @@ self.addEventListener('fetch', (event) => {
       );
       return;
     }
-    event.respondWith(staleWhileRevalidate(req, PUBLIC_CACHE));
+    repondre(event, staleWhileRevalidate(req, PUBLIC_CACHE));
     return;
   }
 
   // Default: network first with offline fallback
   if (req.mode === 'navigate') {
-    event.respondWith(networkFirst(req, PUBLIC_CACHE));
+    repondre(event, networkFirst(req, PUBLIC_CACHE));
     return;
   }
-  event.respondWith(
+  repondre(event, 
     staleWhileRevalidate(req, PUBLIC_CACHE)
   );
 });

@@ -3,7 +3,7 @@
   "short_name": "KREDIT",
   "description": "Plateforme européenne de crédit & investissement — Belgique, EUR, FR/EN/NL/DE. Simulation indicative, décision humaine, audit immuable.",
   "id": "/",
-  "start_url": "/fr?utm_source=homescreen",
+  "start_url": "/?utm_source=homescreen",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "browser"],
@@ -34,21 +34,21 @@
       "name": "Simulateur crédit",
       "short_name": "Simuler",
       "description": "Simulation indicative 60s — méthode française",
-      "url": "/fr#simulateur",
+      "url": "/#simulateur",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Tableau de bord",
       "short_name": "Dashboard",
       "description": "Suivre mes dossiers & échéanciers",
-      "url": "/fr/dashboard",
+      "url": "/dashboard",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Investissements",
       "short_name": "Investir",
       "description": "Catalogue produits BE — EUR",
-      "url": "/fr/investments",
+      "url": "/investments",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
@@ -57,9 +57,9 @@
   "handle_links": "preferred",
   "launch_handler": { "client_mode": "navigate-existing" },
   "edge_side_panel": { "preferred_width": 400 },
-  "protocol_handlers": [{ "protocol": "web+kredit", "url": "/fr?url=%s" }],
+  "protocol_handlers": [{ "protocol": "web+kredit", "url": "/?url=%s" }],
   "share_target": {
-    "action": "/fr?share-target",
+    "action": "/?share-target",
     "method": "GET",
     "params": { "title": "title", "text": "text", "url": "url" }
   },

@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
-  const eur = (v:number)=> formatEUR2(v, locale==="fr"?"fr-BE":"en-BE");
+  const eur = (v:number)=> formatEUR2(v, locale);
   const active = mockApps.filter(a=>a.status==="DISBURSED");
   const next = mockPayments.find(p=>p.status==="PENDING");
   return (
@@ -16,7 +16,7 @@ export default function Page({ params }: { params:{locale:string}}) {
       <div className="space-y-6">
         <div>
           <h1 className="text-[24px] font-extrabold text-ink">Résumé financier</h1>
-          <p className="text-sm text-slate-500">Vue d'ensemble — simulation ≠ offre, décision humaine</p>
+          <p className="text-sm text-slate-500">Vue d&#39;ensemble — simulation ≠ offre, décision humaine</p>
         </div>
 
         {/* stats */}

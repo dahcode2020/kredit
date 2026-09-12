@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function Page({ params }: { params:{locale:string, id:string}}) {
   const locale = params.locale as Locale;
   const app = mockApps.find(a=>a.id===params.id) || mockApps[0];
-  const eur = (v:number)=> formatEUR2(v, "fr-BE");
+  const eur = (v:number)=> formatEUR2(v, locale);
   const steps = ["DRAFT","SUBMITTED","KYC_PENDING","DOCUMENTS_PENDING","UNDER_AUTOMATED_REVIEW","UNDER_ADMIN_REVIEW","APPROVED_WITH_EXCEPTION","CONTRACT_PENDING","CONTRACT_SIGNED","DISBURSEMENT_PENDING","DISBURSED","CLOSED"];
   const idx = steps.indexOf(app.status);
   return (

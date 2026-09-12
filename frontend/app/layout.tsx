@@ -1,38 +1,35 @@
 import "./globals.css";
 import SWRegister from "@/components/pwa/SWRegister";
+import { DEV_SW_HEAL_SCRIPT } from "@/lib/dev-sw-heal";
+import { SITE_ORIGIN } from "@/lib/seo";
 
 export const metadata = {
   title: {
-    default: "KREDIT — Plateforme Européenne de Crédit & Investissement",
+    // Pas de `default` ici: le titre du site est une copie à traduire, donc fournie par
+    // `app/[locale]/layout.tsx` (`common:seo.title`). Une valeur dans ce layout aurait été servie
+    // aux quatre langues — `<title>`, meta description et `og:title` étaient en français sur /en,
+    // /nl et /de.
     template: "%s | KREDIT",
   },
-  description: "Belgique • EUR • FR/EN/NL/DE • Simulation indicative, décision humaine, audit immuable. PWA installable, hors ligne sécurisé.",
   applicationName: "KREDIT",
-  manifest: "/manifest.json",
+  // `manifest` est déclaré par `app/[locale]/layout.tsx` (`/manifest/{locale}.json`) : le nom,
+  // la description, `lang` et surtout les URL du manifeste dépendent de la langue du segment.
+  // `public/manifest.json` reste servi (repli des PWA déjà installées + precache du SW).
   keywords: ["crédit", "Belgique", "investissement", "TAEG", "KREDIT", "PWA", "fintech", "EUR"],
-  authors: [{ name: "KREDIT", url: "https://kredit.be" }],
+  authors: [{ name: "KREDIT", url: SITE_ORIGIN }],
   creator: "KREDIT",
   publisher: "KREDIT",
-  metadataBase: new URL("https://kredit.be"),
-  alternates: {
-    canonical: "/fr",
-    languages: { fr: "/fr", en: "/en", nl: "/nl", de: "/de" },
-  },
-  openGraph: {
-    title: "KREDIT — Crédit & Investissement (BE)",
-    description: "Simulation indicative, décision humaine, audit immuable. PWA installable.",
-    url: "https://kredit.be/fr",
-    siteName: "KREDIT",
-    locale: "fr_BE",
-    type: "website",
-    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "KREDIT" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "KREDIT — Plateforme Européenne",
-    description: "Belgique • EUR • FR/EN/NL/DE",
-    images: ["/icons/icon-512.png"],
-  },
+  metadataBase: new URL(SITE_ORIGIN),
+  // NB: `alternates` (canonical + hreflang) et le bloc `openGraph` sont délibérément absents d'ici.
+  // (1) Ce layout ne reçoit pas les params du segment [locale] (vérifié en Next 14.2) : une valeur
+  // écrite ici s'appliquait aux QUATRE langues — canonical `…/fr` sur /en, /nl et /de (trois langues
+  // de fait écartées de l'index) et `og:locale fr_BE`, valeur refusée par le parseur Open Graph
+  // (hors énumération). (2) Next ne fusionne pas `openGraph` entre parent et enfant : redéclarer le
+  // bloc à moitié dans `app/[locale]/layout.tsx` faisait disparaître `og:image`, `og:site_name` et
+  // `og:type`. Le bloc complet vit donc chez l'enfant, avec les constantes partagées de `lib/seo.ts`.
+  // `og:title`/`og:description` retombent sur `title` et `description` ci-dessus (comportement Next).
+  // Le bloc `twitter` est lui aussi déplacé dans `app/[locale]/layout.tsx` (mêmes raisons que
+  // `openGraph`: Next remplace le bloc chez l'enfant, et sa copie doit être traduite).
   icons: {
     icon: [
       { url: "/icons/icon-72.png", sizes: "72x72" },
@@ -69,13 +66,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {process.env.NODE_ENV !== "production" ? (
+          // Auto-réparation d'un worker hérité qui gèlerait les chunks de dev; jamais en prod.
+          <script id="kredit-dev-sw-heal" dangerouslySetInnerHTML={{ __html: DEV_SW_HEAL_SCRIPT }} />
+        ) : null}
       </head>
       <body className="bg-white text-ink antialiased font-body">
-        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-ink text-white px-4 py-2 rounded-full z-[100]">Aller au contenu</a>
+        {/* Pas de skip-link ici : son libellé est de la copie à traduire, et ce layout ne connaît pas
+            le segment [locale] (params === {}). « Aller au contenu » en dur se retrouvait donc en
+            français sur /en, /nl et /de — dans le tout premier nœud focusable du document, lu par les
+            lecteurs d'écran avant même l'en-tête. Il vit dans `app/[locale]/layout.tsx`. */}
         {children}
         <SWRegister />
       </body>

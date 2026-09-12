@@ -4,22 +4,55 @@
 
 ---
 
+## 0bis. Manifeste par locale (`/manifest/{locale}`)
+
+Le manifeste est une ressource **hors arbre React** : il ne peut pas deviner la langue du visiteur.
+Il est donc généré par locale :
+
+- `lib/pwa-manifest.ts` construit `buildManifest(locale)` en surchargeant les champs dépendant de la
+  langue (`name`, `description`, `lang`, `dir`, `id`, `start_url`, `shortcuts`, `protocol_handlers`,
+  `share_target`) à partir de `public/manifest.json` (base : icônes, captures, couleurs, `display`)
+  et des dictionnaires (`common:seo.*`, `common:nav.*`) ;
+- `app/manifest/[locale]/route.ts` le sert (`force-static` + `generateStaticParams`,
+  `application/manifest+json`, 404 pour une locale non supportée) ;
+- `app/[locale]/layout.tsx` publie `manifest: \`/manifest/${locale}\`` dans ses métadonnées — le
+  layout racine ne met plus `<link rel="manifest">` en dur ;
+- `public/manifest.json` reste servi : c'est le repli des installations déjà présentes. Il ne doit
+  contenir **aucune URL préfixée par une langue** (le test le vérifie) sinon le middleware
+  redirigerait l'application installée vers la langue détectée du visiteur, pas vers celle de
+  l'installation ;
+- le matcher de `middleware.ts` exclut `manifest/` (comme `manifest.json`) : sinon la redirection de
+  locale transforme `/manifest/nl` en `/nl/manifest/nl` (307) et la PWA ne s'installe plus — c'est le
+  premier truc à vérifier quand un manifeste « 404 » alors que la route existe (`next build` liste les
+  quatre `/manifest/{locale}` sont prérendérisées) ;
+- `public/sw.js` traite `/manifest/*` comme un asset statique et la version est passée à
+  `kredit-v6` : sans purge, les postes déjà installés gardaient en `CacheFirst` (30 j) l'ancien
+  `/manifest.json` dont `start_url` valait `/fr?utm_source=homescreen`.
+
+La page served offline est la même logique : `offlineFallbackUrl(locale)` (`lib/pwa.ts`) renvoie
+`/{locale}/offline`, le SW precache les quatre et ne retombe sur `fr` que si la sienne manque.
 ## 1. Manifeste
 
-`frontend/public/manifest.json` (W3C)
+`/manifest/{locale}` (W3C), construit par `lib/pwa-manifest.ts` à partir de
+`frontend/public/manifest.json` pris comme **base** (voir §0bis — le fichier de base reste servi, mais
+seulement comme repli des installations déjà présentes).
 
-- **name** `KREDIT — Crédit & Investissement (BE)` / **short_name** `KREDIT`
-- **id** `/`, **scope** `/`, **start_url** `/fr?utm_source=homescreen`
+- **name** = `t(locale, "common:seo.title")` (`KREDIT — Krediet & Beleggen (België)` en `nl`, etc.)
+  / **short_name** `KREDIT` — **description** = `common:seo.description`
+- **id** `/{locale}`, **scope** `/`, **start_url** `/{locale}?utm_source=homescreen` — une
+  installation depuis `/nl` ouvre `/nl`, plus `/fr`
 - **display** `standalone` + `display_override: ["window-controls-overlay","standalone","browser"]`
 - **theme_color / background_color** `#0F1115` (Dewi dark)
-- **orientation** `any`, **lang** `fr`, **dir** `ltr`, **categories** `finance,business`
+- **orientation** `any`, **lang** = la locale du segment, **dir** = `localeDir[locale]`, **categories** `finance,business`
 - **icons** 10 entrées (72…512 + maskable 512) `purpose:any maskable` — génération ImageMagick depuis `base-1024.png` (#FF4A17 / #0F1115, K)
   - `icon-72.png` … `icon-512.png`, `maskable-512.png` (safe zone), `apple-touch-icon.png` (180)
 - **screenshots** `desktop-1.png` (1280×720 wide) + `mobile-1.png` (720×1280 narrow)
-- **shortcuts** 3 : Simulateur (`/fr#simulateur`), Dashboard (`/fr/dashboard`), Investissements (`/fr/investments`)
+- **shortcuts** 3, libellés dans `common:nav.*` et descriptions dans `common:seo.shortcut.*.description` :
+  Simulateur (`/{locale}#simulateur`), Dashboard (`/{locale}/dashboard`), Investissements (`/{locale}/investments`)
 - **related_applications** `[]`, **prefer_related_applications** `false`
 - **handle_links** `preferred`, **launch_handler** `navigate-existing`, **edge_side_panel** 400
-- **share_target** `GET /fr?share-target` + **protocol_handlers** `web+kredit`
+- **share_target** `GET /{locale}?share-target` + **protocol_handlers** `web+kredit` → `/{locale}?url=%s`
+- le fichier de base ne contient **aucune** URL préfixée par une langue (vérifié par test)
 
 Splash screen : généré par le navigateur depuis `background_color + theme_color + icons + name` ; iOS complément via `<link rel="apple-touch-icon">` + `apple-mobile-web-app-capable` + `apple-splash` (optionnel).
 
@@ -29,7 +62,9 @@ Responsive : manifest `orientation:any` + layout `viewport: width=device-width, 
 
 ## 2. Service Worker — `frontend/public/sw.js`
 
-Version `kredit-v2`. Caches : `kredit-static-v2`, `kredit-public-v2`, `kredit-offline-v2`.
+Version `kredit-v6`. Caches : `kredit-static-v6`, `kredit-public-v6`, `kredit-offline-v6`.
+`VERSION` est le levier de purge : on la change dès qu'un champ servi hors requête change de sens
+(ici le manifeste, §0bis ; pour le HTML, `docs/hydration.md` règle 9).
 
 ### Précache (install)
 
@@ -43,7 +78,7 @@ Version `kredit-v2`. Caches : `kredit-static-v2`, `kredit-public-v2`, `kredit-of
 
 | Stratégie | ID | Quand | Requête |
 |-----------|----|-------|---------|
-| **STATIC_ASSETS** `CacheFirst` | `STATIC_ASSETS` | `/_next/static/*`, `/_next/image`, `/icons/*`, `/screenshots/*`, `*.js,*.css,*.woff2,*.png,*.svg`, `destination in [style,script,font,image]` | GET same-origin immutable — sert du cache d’abord, met en cache si `200`, TTL 30j, max 100 |
+| **STATIC_ASSETS** `CacheFirst` | `STATIC_ASSETS` | `/_next/static/*` **dont le nom porte un hash de build**, `/_next/image`, `/icons/*`, `/screenshots/*`, `*.js,*.css,*.woff2,*.png,*.svg`, `destination in [style,script,font,image]` | GET same-origin — sert du cache d’abord, n’écrit que si `reponseCacheable()` (`no-store`/`no-cache`/`max-age=0`/non-`200` refusés), TTL 30j, max 100. Un `/_next/**` non haché (dev, HMR) n’est pas intercepté : voir §14, contrainte 6 |
 | **PUBLIC_CONTENT** `StaleWhileRevalidate` / `NetworkFirst` pour navigations | `PUBLIC_CONTENT` | `mode:navigate` vers `/` ou `/[locale]` non authentifié, `GET /api/v1/investment-products` | Sert cache immédiatement (stale), rafraîchit en arrière-plan. Pour navigations HTML : `NetworkFirst` 4s avec fallback cache/offline. |
 | **AUTHENTICATED_CONTENT** `NetworkFirst` | `AUTHENTICATED_CONTENT` | navigations `/[locale]/(dashboard|credit|payments|investments|profile|security|admin|super|notifications|settings)`, `GET /api/v1/customer/*` restreint | `fetch` 5s → si échec, sert cache HTML shell si existant sinon `OFFLINE_URL`. **Jamais** de cache persistant du JSON perso ; seul le shell HTML peut être mis en cache brièvement. |
 | **FINANCIAL_DATA** `NetworkOnly` | `FINANCIAL_DATA` | **tout** `method !== GET`, **tout** `/api/*`, `POST /payments`, `POST /investments`, `POST /credit/*` | **Jamais** mis en cache (`no-store`). En offline : `503` JSON `{code:"OFFLINE", message:"Connexion requise…"}` + header `X-KREDIT-Offline:1` pour navigations → `OFFLINE_URL`. |
@@ -172,7 +207,7 @@ Métriques visées : LCP <2.5s (hero 56k, AVIF), INP <200ms (zustand, no heavy J
 ## 11. Stratégies résumées (exigence)
 
 ```
-STATIC_ASSETS       → CacheFirst        → /_next/static, /icons, fonts
+STATIC_ASSETS       → CacheFirst        → /_next/static (URLS HACHÉES seulement), /icons, fonts
 PUBLIC_CONTENT      → StaleWhileRevalidate / NetworkFirst (nav) → /, /[locale], simulateur shell
 AUTHENTICATED_CONTENT → NetworkFirst + offline fallback (no JSON cache) → /dashboard, /credit/*
 FINANCIAL_DATA      → NetworkOnly        → /api/*, POST, payments, investments
@@ -242,6 +277,58 @@ Contraintes appliquées dans `frontend/public/sw.js` :
    versions précédentes (les visiteurs d'avant gardent sinon un cache empoisonné).
 5. Le fallback hors ligne doit rester exécutable : `networkFirst`/`networkOnly` utilisent leur
    propre `new URL(req.url)` (un `url` hérité du scope `fetch` levait une `ReferenceError`).
+6. **Un chunk non haché n'est jamais caché.** `/_next/static/chunks/webpack.js` (et `main-dev.js`,
+   `app/…/page.js`, `/_next/webpack-hmr`) porte une URL stable en dev et change à chaque compile :
+   le CacheFirst y renvoie un runtime webpack d'une compilation morte, les chunks restants venant de la
+   compile courante — le navigateur lève alors
+   `TypeError: Cannot read properties of undefined (reading 'call')` (`options.factory`). D'où
+   `assetHache()` (le `/_next/**` sans hash n'est pas intercepté) et `reponseCacheable()` (aucune écriture
+   si le serveur répond `no-store`/`no-cache`/`max-age=0`/non-`ok`).
+7. **Le worker n'est pas enregistré en développement.** `SWRegister` est monté par le layout racine, donc
+   sur toutes les pages : il s'abstente hors `production` et, à la place, désenregistre les registrations
+   héritées et purge les caches `kredit-*` — un poste déjà parti en cache se répare au rechargement suivant.
+   `next.config.js` ne déclare par ailleurs `/_next/static` en `immutable` qu'en production.
+
+8. **`respondWith` ne reçoit jamais autre chose qu'une `Response`.** Toute réponse confisquée au
+   réseau passe par `repondre(event, …)` → `versResponse(…)`: une valeur `undefined`/`null`, ou une
+   promesse rejetée, fait échouer la requête interceptée avec
+   `Uncaught (in promise) TypeError: Failed to convert value to 'Response'` — le worker transforme
+   alors une simple panne réseau en page blanche. Le `staleWhileRevalidate` historique
+   (`cached || (await fetchPromise) || fetchPromise`) rendait l'*objet promesse*, toujours truthy, puis
+   se résolvait en `null`. Dernier recours: `Response.error()`, exactement ce que la page verrait sans
+   worker. Règle `sw-respondwith-response` dans `check:hydration`.
+9. **Un onglet déjà empoisonné se répare tout seul, même si React ne démarre pas.** `app/layout.tsx`
+   sert, hors production uniquement, un script en ligne dans le `<head>` (`lib/dev-sw-heal.ts`): il
+   s'exécute **avant** les chunks de l'application, désenregistre toute registration héritée, purge les
+   caches `kredit-*`, puis recharge une fois (drapeau `sessionStorage`, donc pas de boucle possible).
+   C'est le seul endroit d'où l'on peut réparer un `webpack.js` figé en cache — tout correctif
+   applicatif, lui, ne s'exécute plus jamais si la page meurt avant l'hydratation.
 
 Ce fichier est vérifié hors CI par `npm --prefix frontend run check:hydration`, qui interdit
-les documents HTML dans `PRECACHE_URLS`. Voir aussi `docs/hydration.md`.
+les documents HTML dans `PRECACHE_URLS` (`sw-cached-document`), toute écriture de cache non gardée et
+tout enregistrement hors production (`sw-cache-unstable-chunk`, `sw-registered-in-dev`). Le comportement
+réel du worker est exécuté dans `frontend/tests/pwa/sw-cache-policy.spec.ts` ; la garde d'enregistrement
+dans `frontend/tests/unit/sw-register-dev.spec.tsx`. Voir aussi `docs/hydration.md` §2 règle 12.
+
+---
+
+## 15. Copie des composants PWA — localisée, et interdite de français en dur
+
+Les cinq composants de `components/pwa/` (pastille de connexion, bandeau hors ligne, invite d'installation,
+mise à jour du service worker, notifications push) sont rendus par `app/[locale]/layout.tsx` sur **toutes**
+les pages, dont la page de repli `/[locale]/offline` servie par le service worker. Leur copie tient
+entièrement dans les dictionnaires (`common:pwa.*`, 41 clés × 4 langues) et le répertoire est sous **règle
+dure** dans `scripts/check-copy.mjs` (`FLOOR_DIRS`), comme les coquilles client et admin : zéro ligne de
+français en dur, aucun budget résiduel.
+
+Deux règles sorties de ce chapitre :
+
+- **Aucun défaut de prop textuel.** `{ actionLabel = "Opération" }` est une chaîne française que le
+  dictionnaire ne peut pas corriger : la prop est optionnelle et sa valeur par défaut sort de
+  `t("pwa.operation")`. C'est le seul cas où `check-copy` refuse une chaîne d'un seul mot.
+- **`CACHE_STRATEGIES` ne parle pas à l'utilisateur.** `description`, `docs` et `clientSide` de `lib/pwa.ts`
+  restent en français : documentation développeur, module importé par le middleware (bundle edge), et
+  l'interface n'affiche que l'identifiant de stratégie. Un composant ne propage pas ces champs dans le DOM.
+
+Vérification : `tests/unit/pwa-chrome-i18n.spec.tsx` (montage jsdom des quatre marchés, `renderToString` de la
+page offline) et `npm run check:copy` en statique.

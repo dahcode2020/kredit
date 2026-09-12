@@ -1,18 +1,19 @@
 "use client";
 import AdminShell from "@/components/admin/AdminShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, t } from "@/lib/i18n";
 import { mockAdminApps } from "@/lib/mockAdmin";
 import Link from "next/link";
 import { useState } from "react";
 import { Search, Filter } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
+  const tr = (k: string, vars?: Record<string, any>) => t(locale, `admin:${k}`, vars);
   const [filter, setFilter] = useState("UNDER_ADMIN_REVIEW");
   const filtered = filter==="ALL"? mockAdminApps : mockAdminApps.filter(a=>a.status===filter);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-4">
-        <div className="flex flex-wrap justify-between gap-4"><div><h1 className="text-[22px] font-extrabold text-ink">Demandes à examiner (12)</h1><p className="text-sm text-slate-500">Filtres status/produit/pays/montant/score • tri risque</p></div><span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border text-xs font-bold">{filtered.length} en attente</span></div>
+        <div className="flex flex-wrap justify-between gap-4"><div><h1 className="text-[22px] font-extrabold text-ink">{tr("applications.title")} (12)</h1><p className="text-sm text-slate-500">{tr("applications.filters")}</p></div><span className="px-3 py-1 rounded-full bg-amber-50 text-amber-700 border text-xs font-bold">{tr("applications.pending", { count: filtered.length })}</span></div>
         <div className="bg-white rounded-2xl border p-4 flex flex-wrap gap-2">
           <div className="flex items-center gap-2 bg-surface border rounded-full px-3 h-10 flex-1 min-w-[200px]"><Search className="w-4 h-4 text-slate-400"/><input placeholder="KRD-..., client, NISS" className="bg-transparent outline-none text-sm flex-1"/></div>
           {["ALL","UNDER_ADMIN_REVIEW","UNDER_AUTOMATED_REVIEW","MORE_INFORMATION_REQUIRED","APPROVED_WITH_EXCEPTION"].map(f=>(

@@ -1,10 +1,11 @@
 "use client";
 import AdminShell from "@/components/admin/AdminShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, t } from "@/lib/i18n";
 import { useState } from "react";
 import { Settings, Users, Package, Scale, Percent, Globe, Languages, Sliders, Plug, Bell, ScrollText, Lock } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
+  const tr = (k: string, vars?: Record<string, any>) => t(locale, `admin:${k}`, vars);
   const [role, setRole] = useState<'ADMIN'|'SUPER_ADMIN'>('SUPER_ADMIN');
   const [tab, setTab] = useState('admins');
   const isSuper = role==='SUPER_ADMIN';
@@ -12,24 +13,26 @@ export default function Page({ params }: { params:{locale:string}}) {
     <AdminShell locale={locale} role={role}>
       <div className="space-y-4">
         <div className="flex flex-wrap justify-between gap-4">
-          <div><h1 className="text-[22px] font-extrabold text-ink">Réglages</h1><p className="text-sm text-slate-500">ADMIN lecture • SUPER_ADMIN écriture (9 onglets) • MFA re-auth pour sensible</p></div>
+          <div><h1 className="text-[22px] font-extrabold text-ink">{tr("settings.title")}</h1><p className="text-sm text-slate-500">{tr("settings.subtitle")}</p></div>
           <div className="flex gap-2">
-            <button onClick={()=>setRole('ADMIN')} className={`h-9 px-4 rounded-full text-xs font-bold border ${role==='ADMIN'?'bg-ink text-white':'bg-white'}`}>Voir en ADMIN</button>
-            <button onClick={()=>setRole('SUPER_ADMIN')} className={`h-9 px-4 rounded-full text-xs font-bold border ${role==='SUPER_ADMIN'?'bg-primary text-white':'bg-white'}`}>Voir en SUPER_ADMIN</button>
+            <button onClick={()=>setRole('ADMIN')} className={`h-9 px-4 rounded-full text-xs font-bold border ${role==='ADMIN'?'bg-ink text-white':'bg-white'}`}>{tr("settings.viewAsAdmin")}</button>
+            <button onClick={()=>setRole('SUPER_ADMIN')} className={`h-9 px-4 rounded-full text-xs font-bold border ${role==='SUPER_ADMIN'?'bg-primary text-white':'bg-white'}`}>{tr("settings.viewAsSuper")}</button>
           </div>
         </div>
-        {!isSuper && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 text-sm"><Lock className="w-4 h-4 text-amber-600"/> Lecture seule — SUPER_ADMIN requis pour modifier. MFA obligatoire.</div>}
+        {!isSuper && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex gap-2 text-sm"><Lock className="w-4 h-4 text-amber-600"/> {tr("settings.readOnly")}</div>}
         <div className="bg-white rounded-2xl border p-2 flex flex-wrap gap-2">
           {[
-            {k:'admins', label:'Administrateurs', icon:Users},
-            {k:'products', label:'Produits', icon:Package},
-            {k:'rules', label:'Règles', icon:Scale},
-            {k:'rates', label:'Taux', icon:Percent},
-            {k:'countries', label:'Pays', icon:Globe},
-            {k:'languages', label:'Langues', icon:Languages},
-            {k:'params', label:'Params', icon:Sliders},
-            {k:'integrations', label:'Intégrations', icon:Plug},
-            {k:'logs', label:'Logs', icon:ScrollText},
+            // Un onglet = un identifiant technique + une clé i18n: les libellés en dur dans ce tableau
+            // étaient la seule raison pour laquelle la page restait française sur /en, /nl et /de.
+            {k:'admins', label:tr("settings.tab.admins"), icon:Users},
+            {k:'products', label:tr("settings.tab.products"), icon:Package},
+            {k:'rules', label:tr("settings.tab.rules"), icon:Scale},
+            {k:'rates', label:tr("settings.tab.rates"), icon:Percent},
+            {k:'countries', label:tr("settings.tab.countries"), icon:Globe},
+            {k:'languages', label:tr("settings.tab.languages"), icon:Languages},
+            {k:'params', label:tr("settings.tab.params"), icon:Sliders},
+            {k:'integrations', label:tr("settings.tab.integrations"), icon:Plug},
+            {k:'logs', label:tr("settings.tab.logs"), icon:ScrollText},
           ].map(t=>(
             <button key={t.k} onClick={()=>setTab(t.k)} className={`px-3 py-2 rounded-full text-xs font-bold border flex items-center gap-1 ${tab===t.k?'bg-ink text-white':'bg-white'}`}>
               <t.icon className="w-3 h-3"/>{t.label}

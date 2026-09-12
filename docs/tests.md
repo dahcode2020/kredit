@@ -75,6 +75,54 @@ expect(totalCost).toBe(round(monthly*n+fees));
 - `tests/unit/kyc.spec.ts` — AdminManualProvider, mock-aml, fraud velocity
 - `tests/unit/payment.idempotency.spec.ts` — même key → même Payment, 409 si payload diff
 - `frontend/tests/unit/pwa-cache.test.ts` — strategies STATIC/PUBLIC/AUTH/FINANCIAL non-cache
+
+**Frontend — `frontend/jest.config.js`** (`ts-jest`, `testEnvironment: jsdom`). Le fuseau du
+processus est épinglé à `Europe/Brussels` par `tests/global-setup.js` — pas par `process.env.TZ`
+dans `setupFilesAfterEnv` : posé après le démarrage du worker, il ne rejoint pas l'analyseur
+de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du runtime ».
+
+- `tests/unit/amortize.precision.spec.ts` — mensualités Decimal HALF_UP, solde final forcé à 0
+- `tests/unit/i18n.money.spec.ts` — `formatEUR`/`formatEUR2` fr-BE / en-BE / nl-BE
+- `tests/unit/hydration.spec.ts` — **verrous anti-hydratation** : sorties Intl sans espace
+  non normalisé, identité U+202F ↔ U+00A0 (CLDR simulé), dates à fuseau forcé, et hiérarchie de
+  détection de locale (`lib/locale-detection.ts`) partagée avec le middleware
+- `tests/unit/dates-timezone.spec.tsx` — `resolveDate` (parité chaîne naive / ISO, « jour seul »,
+  valeur invalide → chaîne vide et non `RangeError`), pureté de `relativeTime` (échoue dès que
+  l'horloge est lue au calcul), et **hydratation** de `<RelativeTime>` : `renderToString` →
+  `hydrateRoot` en écoutant `console.error` + `onRecoverableError`
+- `tests/unit/i18n-keys-usage.spec.ts` — balayage du code (app/components/features/hooks/lib) : toute
+  chaîne en pointes qui se résout comme clé i18n doit se résoudre dans les quatre langues, et ne doit
+  pas rester identique au français (exceptions partagées dans `tests/unit/translation-exceptions.ts`)
+- `tests/unit/shell-i18n.spec.tsx` — coquilles customer/admin montées pour les 4 locales : navigation,
+  écrans d'accès, bandeau MFA et alertes viennent du dictionnaire, aucune chaîne française ne subsiste
+  hors `fr`, et le premier rendu (skeleton) est **identique** quelle que soit la locale (rien à hydrater)
+- `tests/unit/i18n-metadata.spec.ts` — parité `fr/en/nl/de` des 11 namespaces (clés, variables ICU,
+  blocs `plural`), détecteur de copie laissée en français (seule exception : l'endonyme
+  `language.fr`), `buildManifest(locale)` (aucune URL préfixée par une langue, tuiles localisées) et
+  `generateMetadata` (titre/description/twitter/manifest par segment)
+- `tests/unit/locale-propagation.spec.tsx` — tables de locale à source unique, `generateMetadata`
+  par segment `[locale]` (canonical, hreflang, `og:locale`) et montage réel de la page Paiements en
+  `fr` vs `nl` (le montant suit la langue de l'URL)
+- `tests/pwa/cache-strategies.spec.ts` — stratégies déclaratives + manifest
+- `tests/a11y/axe.spec.ts` — invariants a11y statiques (landmarks, palette)
+- garde-fous hors Jest : `npm run check` = `check:hydration` (APIs au render + imbrications HTML) +
+  `check:copy` (budget de copie française par fichier, zéro dans les coquilles — après une traduction,
+  `npm run check:copy:update` redescend la barre, jamais l'inverse), et `npm run check:hydrate`
+  (hydratation réelle via jsdom, option `--skew-intl`, et `--expect`/`--forbid` pour contrôler le texte
+  hydraté — utile pour le chrome des coquilles, invisible dans le HTML serveur ; toujours avec une route
+  préfixée par la locale, sinon le middleware renvoie sur `/fr/…` et le test échoue pour la mauvaise raison)
+- `npm run check:assets` (serveur demandé, à lancer donc avec `npm run dev` en parallèle) : télécharge
+  le HTML de chaque route, en extrait **toutes** les ressources internes (`/_next/static/…`,
+  `/_next/image?…`, `/icons/…`, manifeste, `sw.js`) et les re-demande une par une. C'est le contrôle qui
+  manque quand le serveur répond `GET /fr 200` sans erreur au terminal alors que le navigateur affiche
+  une page vide : le HTML pointe un chunk que le serveur ne fournit plus (`.next` régénéré sous un serveur
+  en cours, build de prod et dev partageant le même répertoire, install tronquée). Sortie : 0 si tout ce
+  que le HTML réclame est servi.
+  `check:links` croise chaque `href`/`router.push`/`redirect` du code et chaque URL stockée dans un
+  dictionnaire avec les `page.tsx` existants : c'est le contrôle qui a manqué quand `/fr/login` a paru
+  « faire disparaître le site » (un lien mort ne casse ni le lint ni le build, il ne se voit qu'au clic).
+  Les segments dynamiques sont des jokers dans les deux sens ; un cas délibéré s'échappe avec un
+  commentaire `check-routes:ignore` sur la ligne.
 - `frontend/tests/unit/i18n.test.ts` — t('fr', 'hero.title') + fr-BE override
 
 **Commande** : `npm run test:unit` → `jest --testPathPattern='tests/unit|__tests__' --coverage`
@@ -206,6 +254,16 @@ test('landing a11y', async ({page}) => {
 ```
 
 - **Checks** : `landmark (header/main/footer/nav)`, `skip-link` focusable, `aria-live` connectivity `ONLINE/OFFLINE`, `alt` icons, contrast AA (ink #0F1115/white, primary #FF4A17), `keyboard` Tab → focus `ring-primary`, `prefers-reduced-motion`, `lang` per locale `fr-BE`
+- **Réécrit en passe 9** (`frontend/tests/a11y/axe.spec.ts`) : les sept tests étaient tautologiques — ils
+  déclaraient eux-mêmes l'objet à vérifier (`const skipLink = { href: '#main-content' }` puis
+  `expect(skipLink.href).toBe('#main-content')`) et ne pouvaient donc pas échouer. Ils lisent maintenant les
+  sources réelles : `<a href="#main">` doit exister **une seule fois**, dans `app/[locale]/layout.tsx`, avant
+  `<Header>`, avec un libellé issu des quatre dictionnaires ; `role`/`aria-live` sont vérifiés dans les
+  composants PWA ; le ratio de contraste est **calculé** (WCAG 2.1) à partir de `tailwind.config.js`, et non
+  plus recopié dans le test ; `<html lang>` est contrôlé via `HtmlLangScript`/`HtmlLang` parce que le layout
+  racine ne connaît pas la locale. Le premier contrôle honnête a immédiatement trouvé deux défauts : l'ancre
+  était `#main` (le test mentait sur `#main-content`) et le skip-link du layout racine était en français sur
+  les quatre marchés.
 
 **Seuil** : `0 violations`, Lighthouse a11y >95, `eslint-plugin-jsx-a11y` en CI.
 

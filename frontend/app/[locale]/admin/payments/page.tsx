@@ -1,11 +1,14 @@
 "use client";
 import AdminShell from "@/components/admin/AdminShell";
-import { Locale } from "@/lib/i18n";
+import { Locale, t } from "@/lib/i18n";
 import { mockPayments } from "@/lib/mock";
 import { formatEUR2 } from "@/lib/utils";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
-  const eur=(v:number)=> formatEUR2(v,"fr-BE");
+  const tr = (k: string, vars?: Record<string, any>) => t(locale, `admin:${k}`, vars);
+  // locale du segment [locale] uniquement: formatEUR2 n'accepte plus un tag Intl, et
+  // n'a plus de défaut « fr-BE » (un utilisateur nl/de recevait du français sans erreur).
+  const eur=(v:number)=> formatEUR2(v, locale);
   return (
     <AdminShell locale={locale} role="ADMIN">
       <div className="space-y-4">
@@ -22,7 +25,7 @@ export default function Page({ params }: { params:{locale:string}}) {
             </table>
           </div>
         </div>
-        <div className="bg-white rounded-2xl border p-4 text-xs text-slate-500">Réconciliation PSP Mollie • webhooks idempotents • mandats SEPA</div>
+        <div className="bg-white rounded-2xl border p-4 text-xs text-slate-500">{tr("payments.reconciliation")}</div>
       </div>
     </AdminShell>
   );

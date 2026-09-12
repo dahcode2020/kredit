@@ -2,6 +2,12 @@ process.env.TZ = 'Europe/Brussels';
 
 try { require('whatwg-fetch'); } catch {}
 
+// jsdom ne fournit pas TextEncoder/TextDecoder, dont react-dom/server a besoin
+// pour rendre un composant dans un test d'hydratation.
+const util = require('util');
+if (typeof globalThis.TextEncoder === 'undefined') (globalThis as any).TextEncoder = util.TextEncoder;
+if (typeof globalThis.TextDecoder === 'undefined') (globalThis as any).TextDecoder = util.TextDecoder;
+
 // Mock next/navigation, next-intl if needed
 try {
   jest.mock('next/navigation', () => ({
@@ -32,6 +38,9 @@ if (typeof window !== 'undefined' && window.navigator) {
   try {
     Object.defineProperty(window.navigator, 'serviceWorker', {
       writable: true,
+      // configurable: les specs qui doivent poser leur propre fake (register/unregister, caches)
+      // ne peuvent pas redéfinir une propriété verrouillée en writable seul.
+      configurable: true,
       value: {
         register: jest.fn().mockResolvedValue({ active: { state: 'activated' }, installing: null }),
         controller: { state: 'activated' },

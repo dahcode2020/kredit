@@ -5,7 +5,7 @@ import { formatEUR2 } from "@/lib/utils";
 import { Download, Calendar } from "lucide-react";
 export default function Page({ params }: { params:{locale:string}}) {
   const locale = params.locale as Locale;
-  const eur = (v:number)=> formatEUR2(v, "fr-BE");
+  const eur = (v:number)=> formatEUR2(v, locale);
   const schedule = Array.from({length:60}, (_,i)=> ({m:i+1, payment:463.12, interest: i<20? 45: 12, principal: 463.12-(i<20?45:12), balance: 25000 - (i+1)*(463.12-30), status: i<2?'PAYÉ': i===2?'À VENIR':'À VENIR'}));
   return (
     <CustomerShell locale={locale}>
