@@ -68,6 +68,15 @@ function ignorer(chemin) {
   return false;
 }
 
+// Sans not-found à la racine, Next garde SA page 404 : une phrase en anglais, aucun lien,
+// rendue hors du segment localisé — le visiteur croit à une panne. Le contrôle porte là aussi.
+const FATAUX = ["app/not-found.tsx", "app/[locale]/not-found.tsx", "app/[locale]/error.tsx", "app/global-error.tsx"];
+const absents = FATAUX.filter((f) => !existsSync(join(ROOT, f)));
+if (absents.length) {
+  console.error(`\n✖ check-routes: fichier(s) de secours manquant(s): ${absents.join(", ")}\n   Sans eux, une route inconnue ou une exception de rendu laisse une page vide (docs/hydration.md, règles 13 et 14).\n`);
+  process.exit(1);
+}
+
 const liste = routes();
 const motifs = liste.map((r) => segments(r.startsWith("/") ? r : `/${r}`));
 

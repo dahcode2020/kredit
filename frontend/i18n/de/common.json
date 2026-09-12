@@ -332,5 +332,10 @@
   "shell.errorHome": "Zurück zur Startseite",
   "shell.errorDevHint": "Detail für die Entwicklung",
   "shell.errorGlobalTitle": "KREDIT konnte nicht starten",
-  "shell.errorGlobalBody": "Die Seite konnte insgesamt nicht gerendert werden. Neu laden oder von der Startseite aus neu beginnen."
+  "shell.errorGlobalBody": "Die Seite konnte insgesamt nicht gerendert werden. Neu laden oder von der Startseite aus neu beginnen.",
+  "shell.notFoundTitle": "Seite nicht gefunden",
+  "shell.notFoundBody": "Dieser Link führt zu keiner Seite der Website. Vielleicht wurde sie umbenannt, oder die Adresse wurde manuell eingegeben.",
+  "shell.notFoundHome": "Zurück zur Startseite",
+  "shell.notFoundOther": "Andere Sprache wählen",
+  "shell.notFoundRoot": "Die angeforderte Seite existiert nicht in dieser Sprache."
 }

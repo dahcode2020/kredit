@@ -332,5 +332,10 @@
   "shell.errorHome": "Terug naar startscherm",
   "shell.errorDevHint": "Detail voor ontwikkeling",
   "shell.errorGlobalTitle": "KREDIT kon niet starten",
-  "shell.errorGlobalBody": "De pagina volledig mislukt bij het weergeven. Herlaad, of ga terug naar het startscherm."
+  "shell.errorGlobalBody": "De pagina volledig mislukt bij het weergeven. Herlaad, of ga terug naar het startscherm.",
+  "shell.notFoundTitle": "Pagina niet gevonden",
+  "shell.notFoundBody": "Deze link komt overeen met geen enkele pagina op de site. Misschien is de naam gewijzigd, of is het adres met de hand ingetypt.",
+  "shell.notFoundHome": "Terug naar startscherm",
+  "shell.notFoundOther": "Andere taal kiezen",
+  "shell.notFoundRoot": "De gevraagde pagina bestaat niet in deze taal."
 }

@@ -11,7 +11,6 @@
   "app/[locale]/examples/i18n/page.tsx": 2,
   "app/[locale]/investments/[id]/page.tsx": 2,
   "app/[locale]/investments/page.tsx": 2,
-  "app/[locale]/not-found.tsx": 1,
   "app/[locale]/profile/page.tsx": 5,
   "app/[locale]/security/page.tsx": 2,
   "app/[locale]/settings/page.tsx": 4,

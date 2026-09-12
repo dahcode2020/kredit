@@ -332,5 +332,10 @@
   "shell.errorHome": "Back to home",
   "shell.errorDevHint": "Development detail",
   "shell.errorGlobalTitle": "KREDIT could not start",
-  "shell.errorGlobalBody": "The page failed to render entirely. Reload, or start again from the home page."
+  "shell.errorGlobalBody": "The page failed to render entirely. Reload, or start again from the home page.",
+  "shell.notFoundTitle": "Page not found",
+  "shell.notFoundBody": "This link matches no page on the site. It may have been renamed, or the address was typed by hand.",
+  "shell.notFoundHome": "Back to home",
+  "shell.notFoundOther": "Pick another language",
+  "shell.notFoundRoot": "The requested page does not exist in this language."
 }

@@ -219,6 +219,21 @@ dans un store : une frontière doit rester debout quand le reste de l'applicatio
 de tomber. Un lien interne vers une route inexistante produit le même écran blanc après un clic —
 d'où `npm run check:links` (voir `docs/tests.md`).
 
+### 14. Une route inconnue doit rester une page du site, pas la page 404 de Next
+
+`app/[locale]/not-found.tsx` ne couvre que les `notFound()` **levés dans le segment**. Une URL qui ne
+correspond à aucune page — faute de frappe, lien périmé, deep-link d'une campagne — est traitée **hors**
+du segment localisé : sans `app/not-found.tsx`, Next sert son document intégré, une phrase en anglais,
+sans bandeau, sans pied, sans lien. Sur un site revendiqué FR/EN/NL/DE, c'est indistinguable d'une panne
+depuis le navigateur — et c'était le deuxième sens de « le site disparaît après être apparu ».
+
+Les deux fichiers existent désormais : `app/not-found.tsx` (composant **serveur**, la langue vient du
+cookie `NEXT_LOCALE` posé par le sélecteur, repli `fr`, et les quatre langues sont proposées comme seule
+issue de la page) et `app/[locale]/not-found.tsx` (composant client, langue relue dans `usePathname`,
+rendu **dans** le layout localisé donc avec bandeau et pied de page). La copie passe par
+`common:shell.notFound*` ; `npm run check:links` échoue si l'un des quatre fichiers de secours
+(`not-found`, `error`, racine et segment) disparaît.
+
 ---
 
 ## 3. Vérification

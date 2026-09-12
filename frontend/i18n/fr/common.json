@@ -332,5 +332,10 @@
   "shell.errorHome": "Retour à l'accueil",
   "shell.errorDevHint": "Détail pour le développement",
   "shell.errorGlobalTitle": "KREDIT n'a pas pu démarrer",
-  "shell.errorGlobalBody": "La page n'a pas pu être affichée du tout. Rechargez, ou repartez de l'accueil."
+  "shell.errorGlobalBody": "La page n'a pas pu être affichée du tout. Rechargez, ou repartez de l'accueil.",
+  "shell.notFoundTitle": "Page introuvable",
+  "shell.notFoundBody": "Ce lien ne correspond à aucune page du site. Il a peut-être été renommé, ou l'adresse a été saisie à la main.",
+  "shell.notFoundHome": "Retour à l'accueil",
+  "shell.notFoundOther": "Choisir une autre langue",
+  "shell.notFoundRoot": "La page demandie n'existe pas dans cette langue."
 }
