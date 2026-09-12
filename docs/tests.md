@@ -110,7 +110,14 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   `npm run check:copy:update` redescend la barre, jamais l'inverse), et `npm run check:hydrate`
   (hydratation réelle via jsdom, option `--skew-intl`, et `--expect`/`--forbid` pour contrôler le texte
   hydraté — utile pour le chrome des coquilles, invisible dans le HTML serveur ; toujours avec une route
-  préfixée par la locale, sinon le middleware renvoie sur `/fr/…` et le test échoue pour la mauvaise raison).
+  préfixée par la locale, sinon le middleware renvoie sur `/fr/…` et le test échoue pour la mauvaise raison)
+- `npm run check:assets` (serveur demandé, à lancer donc avec `npm run dev` en parallèle) : télécharge
+  le HTML de chaque route, en extrait **toutes** les ressources internes (`/_next/static/…`,
+  `/_next/image?…`, `/icons/…`, manifeste, `sw.js`) et les re-demande une par une. C'est le contrôle qui
+  manque quand le serveur répond `GET /fr 200` sans erreur au terminal alors que le navigateur affiche
+  une page vide : le HTML pointe un chunk que le serveur ne fournit plus (`.next` régénéré sous un serveur
+  en cours, build de prod et dev partageant le même répertoire, install tronquée). Sortie : 0 si tout ce
+  que le HTML réclame est servi.
   `check:links` croise chaque `href`/`router.push`/`redirect` du code et chaque URL stockée dans un
   dictionnaire avec les `page.tsx` existants : c'est le contrôle qui a manqué quand `/fr/login` a paru
   « faire disparaître le site » (un lien mort ne casse ni le lint ni le build, il ne se voit qu'au clic).

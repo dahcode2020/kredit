@@ -9,6 +9,8 @@ name: CI
 # (budget de copie non traduite: 0 dans les coquilles, décroissant ailleurs — `npm run check:copy:update`
 # ne fait QUE redescendre la barre), `check:links` (toute cible interne d'un href/push/redirect
 # correspond à un page.tsx réel — un lien vers une route absente ne se voit qu'au clic)
+# (aucun lien mort), `check:assets` (chaque ressource référencée par le HTML est réellement servie —
+# nécessite un serveur, donc hors job statique)
 # après une traduction, jamais avant).
 on:
   push: { branches: [main, arena/*] }

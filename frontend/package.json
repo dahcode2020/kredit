@@ -18,6 +18,7 @@
     "check": "npm run check:hydration && npm run check:copy && npm run check:links",
     "check:copy:update": "node scripts/check-copy.mjs --update",
     "check:links": "node scripts/check-routes.mjs",
+    "check:assets": "node scripts/check-assets.mjs",
     "check:hydrate": "node scripts/hydrate-check.mjs"
   },
   "allowScripts": {
