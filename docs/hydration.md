@@ -236,6 +236,29 @@ rendu **dans** le layout localisé donc avec bandeau et pied de page). La copie 
 
 ---
 
+### 15. `next dev` et `next build` ne partagent jamais le même dossier compilé
+
+Un build de production écrit dans `.next` : il remplace les chunks que le serveur de dev a en mémoire,
+et le `webpack.js` qui reste sur le disque est celui d'une autre compilation. Le HTML servi référence
+alors des identifiants de modules que le runtime chargé ne connaît pas, et le navigateur meurt de façon
+parfaitement reproductible sur `Cannot read properties of undefined (reading 'call')` dans
+`options.factory` — pendant que le terminal du serveur affiche `GET /fr 200` et que chaque fichier
+réclamé est servi à 200. Rien, dans le dépôt, ne permet de le deviner depuis le code : c'est un état du
+poste.
+
+D'où `distDir: process.env.NODE_ENV === "production" ? ".next" : ".next-dev"` dans `next.config.js`
+(isolation mesurée : `npm run build` lancé pendant que le dev tourne laisse `/fr` à 200, et
+`main-app.js` — chunk que le dev seul produit — n'apparaît pas dans `.next`). Deux conséquences à
+connaître : `next.config.js` n'est lu **qu'au démarrage**, donc un pull qui change `distDir` est sans
+effet sur le serveur en cours (d'où la ligne rouge « le serveur a démarré avant » de `check:state`) ;
+et `tsconfig.json` est réécrit par Next pour ajouter `".next-dev/types/**/*.ts"` à `include` — la
+version formatée du fichier est la version canonique, ne pas la re-plier.
+
+Le contrôle `npm run check:state` (`frontend/scripts/check-state.mjs`) vérifie l'arbre, les deux
+dossiers compilés, la fraîcheur relative des sources et des chunks, `max_user_watches`, et compare
+l'octet servi à l'octet du disque pour `webpack.js` et `main-app.js` : c'est lui qui dit si l'on est
+dans ce cas, dans l'autre (worker hérité) ou dans aucun.
+
 ## 3. Vérification
 
 Verrous permanents dans la suite Jest (`npm --prefix frontend test`) :

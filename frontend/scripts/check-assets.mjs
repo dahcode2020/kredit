@@ -16,7 +16,7 @@
  *
  *   npm run dev                              # à côté
  *   npm run check:assets                     # /fr /en /nl /de + simulateur + admin
- *   npm run check:assets -- --routes /fr --verbose
+ *   npm run check:assets -- --routes /fr --detail
  *
  * Sortie : 0 si chaque ressource référencée est servie, 1 sinon.
  */
@@ -30,7 +30,9 @@ const drapeau = (nom) => process.argv.includes(`--${nom}`);
 
 const BASE = (arg("base", "http://localhost:3000")).replace(/\/$/, "");
 const ROUTES = (drapeau("routes") ? process.argv.slice(process.argv.indexOf("--routes") + 1).filter((a) => !a.startsWith("--")) : ["/fr", "/en", "/nl", "/de", "/fr/credit/simulator", "/fr/admin/dashboard"]);
-const VERBOSITE = drapeau("verbose");
+// `--detail` et pas seulement `--verbose`: npm réserve --verbose (comme --dry-run) comme sa propre
+// config et ne le transmet PAS au script -> `npm run check:assets -- --verbose` passerait en muet.
+const VERBOSITE = drapeau("verbose") || drapeau("detail");
 const CONCURRENCE = Number(arg("concurrency", 8));
 
 const PATRON = /(?:href|src)=["'](\/[^"']+)["']|url\((\/[^)]+)\)/g;

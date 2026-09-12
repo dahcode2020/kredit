@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Le dev n'écrit PAS dans le même dossier que `next build`. Partager un `.next` entre les deux
+  // est la manière la plus fiable de produire exactement la panne « lit de webpack figé »: le build
+  // de production remplace les chunks que le serveur de dev a en mémoire, le HTML servi référence
+  // alors des identifiants de modules que le runtime chargé ne connaît pas -> « Cannot read
+  // properties of undefined (reading 'call') » dans `options.factory`, réplicable à merci par un
+  // rechargement, avec un serveur pourtant tout vert et tous ses fichiers à 200. Ici: `next dev`
+  // compile dans `.next-dev`, `next build`/`next start` dans `.next`. (Un NODE_ENV=production forcé
+  // avec `next dev` retomberait sur `.next`: c'est le seul cas où l'isolation saute.)
+  distDir: process.env.NODE_ENV === "production" ? ".next" : ".next-dev",
   reactStrictMode: true,
   compress: true,
   poweredByHeader: false,

@@ -5,6 +5,7 @@ node_modules
 
 # next
 frontend/.next
+frontend/.next-dev
 frontend/out
 frontend/dist
 backend/dist
