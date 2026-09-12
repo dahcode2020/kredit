@@ -130,6 +130,12 @@ et transcode via les presets de `next.config.js` (`formats` AVIF/WebP, `deviceSi
 `remotePatterns` pour `images.unsplash.com` et `i.pravatar.cc`). **Conséquence à ne pas oublier:**
 `sharp` est en `dependencies` et non en `devDependencies` — c'est l'optimiseur de `next start` qui
 l'appelle, et le `Dockerfile` runtime ne copie que `node_modules` + `.next`. Sans lui, chaque image
+
+Depuis que `next.config.js` rend `distDir` conditionnel (`.next-dev` en dev, `.next` en production),
+ce `COPY` est un contrat entre trois fichiers que personne n'ouvre ensemble : il est verrouillé par
+`frontend/tests/unit/prod-dist-dir.spec.ts` (le stage runtime pose `ENV NODE_ENV=production`, et la
+clé copiée est bien celle que `next build` produit). Rouge vérifié en redirigeant le `COPY` vers
+`.next-dev`, puis en retirant l'`ENV` : un rouge par modification, et rien d'autre.
 optimisée répond 500 ; le contrôle est
 `curl '/_next/image?url=%2F<asset>&w=256&q=75'` → `200 image/webp`.
 
