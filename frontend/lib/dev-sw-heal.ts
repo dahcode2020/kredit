@@ -1,5 +1,5 @@
 /**
- * Auto-réparation du service worker en développement — à exécuter AVANT les chunks de l'application.
+ * Auto-réparation du service worker en développement — servi hors production uniquement.
  *
  * Contexte: un worker enregistré par une version antérieure de `public/sw.js` a pu mettre en cache
  * `/_next/static/chunks/webpack.js` (URL stable en dev, réécrite à chaque compile). Dans cet état, la
@@ -7,11 +7,14 @@
  * correctif applicatif ne peut atteindre le navigateur: la purification vit dans le worker, or le
  * worker fautif est justement ce qui empêche la nouvelle version de s'installer proprement.
  *
- * D'où ce script en ligne, rendu par `app/layout.tsx` dans le `<head>` (donc exécuté avant les
- * scripts de l'application, indépendamment de ce que React fera ensuite): s'il trouve une
- * registration, il la désenregistre, purge les caches `kredit-*`, puis recharge UNE fois — le
- * drapeau `sessionStorage` rend la boucle impossible, même si le rechargement retombe sur un cache
- * persistant. Jamais servi en production.
+ * D'où ce script en ligne, rendu par `app/layout.tsx`: s'il trouve une registration, il la
+ * désenregistre, purge les caches `kredit-*`, puis recharge UNE fois — le drapeau `sessionStorage`
+ * rend la boucle impossible, même si le rechargement retombe sur un cache persistant. Il est exécuté
+ * APRÈS les <script src="/_next/static/chunks/…"> que Next injecte en tête (position mesurée: 4417
+ * en premier enfant du <head>, 4725 en strategy="beforeInteractive", les chunks de Next démarrant à
+ * 569; aucun layout App Router ne peut les précéder). Ce n'est pas bloquant: un <script> classique
+ * s'exécute même si un script d'avant a jeté, donc le premier chargement échoue et le second est
+ * propre. Jamais servi en production.
  *
  * Le code est volontairement en ES5, sans accents ni libellé: il est hors chaîne de localisation
  * (il s'exécute quand le reste de l'application ne tourne plus) et échappe donc aux gardes de copie.

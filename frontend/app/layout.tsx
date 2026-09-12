@@ -69,12 +69,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        {process.env.NODE_ENV !== "production" ? (
-          // Auto-réparation d'un worker hérité qui gèlerait les chunks de dev; jamais en prod.
-          <script id="kredit-dev-sw-heal" dangerouslySetInnerHTML={{ __html: DEV_SW_HEAL_SCRIPT }} />
-        ) : null}
       </head>
       <body className="bg-white text-ink antialiased font-body">
+        {process.env.NODE_ENV !== "production" ? (
+          // Auto-réparation d'un worker hérité qui gèlerait les chunks de dev; jamais en prod.
+          // Placement mesuré, pas supposé: en premier enfant de <head> comme en
+          // `strategy="beforeInteractive"`, le script atterrissait en 4417/4725 du HTML servi,
+          // soit APRÈS les `<script src="/_next/static/chunks/…">` injectés par Next dès 569.
+          // Rien, dans un layout App Router, ne peut les précéder. Le script n'en est pas moins
+          // efficace: un `<script>` classique s'exécute même si un script précédent a jeté, donc
+          // le premier chargement échoue, puis celui-ci désenregistre le worker, purge les caches
+          // `kredit-*` et recharge une fois (drapeau sessionStorage: aucune boucle).
+          <script id="kredit-dev-sw-heal" dangerouslySetInnerHTML={{ __html: DEV_SW_HEAL_SCRIPT }} />
+        ) : null}
         {/* Pas de skip-link ici : son libellé est de la copie à traduire, et ce layout ne connaît pas
             le segment [locale] (params === {}). « Aller au contenu » en dur se retrouvait donc en
             français sur /en, /nl et /de — dans le tout premier nœud focusable du document, lu par les

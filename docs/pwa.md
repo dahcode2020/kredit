@@ -298,11 +298,15 @@ Contraintes appliquées dans `frontend/public/sw.js` :
    se résolvait en `null`. Dernier recours: `Response.error()`, exactement ce que la page verrait sans
    worker. Règle `sw-respondwith-response` dans `check:hydration`.
 9. **Un onglet déjà empoisonné se répare tout seul, même si React ne démarre pas.** `app/layout.tsx`
-   sert, hors production uniquement, un script en ligne dans le `<head>` (`lib/dev-sw-heal.ts`): il
-   s'exécute **avant** les chunks de l'application, désenregistre toute registration héritée, purge les
-   caches `kredit-*`, puis recharge une fois (drapeau `sessionStorage`, donc pas de boucle possible).
-   C'est le seul endroit d'où l'on peut réparer un `webpack.js` figé en cache — tout correctif
-   applicatif, lui, ne s'exécute plus jamais si la page meurt avant l'hydratation.
+   sert, hors production uniquement, un script en ligne (`lib/dev-sw-heal.ts`) qui désenregistre toute
+   registration héritée, purge les caches `kredit-*` et recharge **une** fois (drapeau
+   `sessionStorage`, donc aucune boucle possible). Le placement est mesuré, pas supposé : premier
+   enfant du `<head>` comme en `strategy="beforeInteractive"`, il tombe en position 4417/4725 du HTML
+   servi, donc **après** les `<script src="/_next/static/chunks/…">` injectés par Next dès la position
+   569 — rien, dans un layout App Router, ne peut les précéder. Ce n'est pas bloquant : un
+   `<script>` classique s'exécute même si un script d'avant a jeté. Le premier chargement échoue donc
+   encore, le second est propre. C'est le seul chemin par lequel un `webpack.js` figé en cache se
+   répare sans ouvrir DevTools : après cette panne, plus aucun code applicatif ne tourne.
 
 Ce fichier est vérifié hors CI par `npm --prefix frontend run check:hydration`, qui interdit
 les documents HTML dans `PRECACHE_URLS` (`sw-cached-document`), toute écriture de cache non gardée et
