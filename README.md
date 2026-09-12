@@ -12,7 +12,9 @@
 ## 1. Démarrage ultra-rapide
 
 ```bash
-# Frontend PWA (Next.js)
+# Frontend PWA (Next.js) — TOUJOURS depuis `frontend/` (pas de package.json à la racine,
+# et `npm --prefix frontend ci` n'y fait pas une vraie installation propre: il laisse
+# node_modules/.bin/next absent, et `npx next` télécharge alors un Next majeur différent)
 cd frontend
 npm install
 npm run dev      # → http://localhost:3000  (bind 0.0.0.0)
@@ -25,6 +27,13 @@ npm run dev      # → http://localhost:4000/api/v1
 # Full stack via Docker (postgres+redis+minio)
 docker compose up --build
 ```
+
+> **npm ≥ 12 (juillet 2026)** — les scripts d'installation des dépendances sont bloqués par défaut;
+> `frontend/package.json` déclare donc `allowScripts` pour `sharp` et `unrs-resolver` (entrées épinglées
+> sur la version installée). Après un bump de l'un des deux: `npm install-scripts approve sharp` puis
+> `npm rebuild`. Sans cette approbation, rien ne casse au démarrage — mais `sharp` n'est plus vérifié,
+> et c'est l'optimisation d'images de `next start` qui tombe, plus tard, en production. Le contrôle
+> `tests/unit/npm-install-scripts.spec.ts` le refuse désormais dans la suite de tests.
 
 **Comptes de démo (front mock):**
 - `customer@kredit.be / Customer123!` → `/fr/dashboard`

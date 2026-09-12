@@ -20,6 +20,10 @@
     "check:links": "node scripts/check-routes.mjs",
     "check:hydrate": "node scripts/hydrate-check.mjs"
   },
+  "allowScripts": {
+    "sharp@0.33.5": true,
+    "unrs-resolver@1.12.2": true
+  },
   "dependencies": {
     "clsx": "2.1.1",
     "decimal.js": "10.4.3",
