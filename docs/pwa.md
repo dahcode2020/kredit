@@ -207,7 +207,7 @@ Métriques visées : LCP <2.5s (hero 56k, AVIF), INP <200ms (zustand, no heavy J
 ## 11. Stratégies résumées (exigence)
 
 ```
-STATIC_ASSETS       → CacheFirst        → /_next/static, /icons, fonts
+STATIC_ASSETS       → CacheFirst        → /_next/static (URLS HACHÉES seulement), /icons, fonts
 PUBLIC_CONTENT      → StaleWhileRevalidate / NetworkFirst (nav) → /, /[locale], simulateur shell
 AUTHENTICATED_CONTENT → NetworkFirst + offline fallback (no JSON cache) → /dashboard, /credit/*
 FINANCIAL_DATA      → NetworkOnly        → /api/*, POST, payments, investments
@@ -277,9 +277,23 @@ Contraintes appliquées dans `frontend/public/sw.js` :
    versions précédentes (les visiteurs d'avant gardent sinon un cache empoisonné).
 5. Le fallback hors ligne doit rester exécutable : `networkFirst`/`networkOnly` utilisent leur
    propre `new URL(req.url)` (un `url` hérité du scope `fetch` levait une `ReferenceError`).
+6. **Un chunk non haché n'est jamais caché.** `/_next/static/chunks/webpack.js` (et `main-dev.js`,
+   `app/…/page.js`, `/_next/webpack-hmr`) porte une URL stable en dev et change à chaque compile :
+   le CacheFirst y renvoie un runtime webpack d'une compilation morte, les chunks restants venant de la
+   compile courante — le navigateur lève alors
+   `TypeError: Cannot read properties of undefined (reading 'call')` (`options.factory`). D'où
+   `assetHache()` (le `/_next/**` sans hash n'est pas intercepté) et `reponseCacheable()` (aucune écriture
+   si le serveur répond `no-store`/`no-cache`/`max-age=0`/non-`ok`).
+7. **Le worker n'est pas enregistré en développement.** `SWRegister` est monté par le layout racine, donc
+   sur toutes les pages : il s'abstente hors `production` et, à la place, désenregistre les registrations
+   héritées et purge les caches `kredit-*` — un poste déjà parti en cache se répare au rechargement suivant.
+   `next.config.js` ne déclare par ailleurs `/_next/static` en `immutable` qu'en production.
 
 Ce fichier est vérifié hors CI par `npm --prefix frontend run check:hydration`, qui interdit
-les documents HTML dans `PRECACHE_URLS`. Voir aussi `docs/hydration.md`.
+les documents HTML dans `PRECACHE_URLS` (`sw-cached-document`), toute écriture de cache non gardée et
+tout enregistrement hors production (`sw-cache-unstable-chunk`, `sw-registered-in-dev`). Le comportement
+réel du worker est exécuté dans `frontend/tests/pwa/sw-cache-policy.spec.ts` ; la garde d'enregistrement
+dans `frontend/tests/unit/sw-register-dev.spec.tsx`. Voir aussi `docs/hydration.md` §2 règle 12.
 
 ---
 

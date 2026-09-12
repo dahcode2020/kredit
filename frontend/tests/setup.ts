@@ -38,6 +38,9 @@ if (typeof window !== 'undefined' && window.navigator) {
   try {
     Object.defineProperty(window.navigator, 'serviceWorker', {
       writable: true,
+      // configurable: les specs qui doivent poser leur propre fake (register/unregister, caches)
+      // ne peuvent pas redéfinir une propriété verrouillée en writable seul.
+      configurable: true,
       value: {
         register: jest.fn().mockResolvedValue({ active: { state: 'activated' }, installing: null }),
         controller: { state: 'activated' },

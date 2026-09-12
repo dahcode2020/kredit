@@ -42,10 +42,17 @@ const nextConfig = {
         source: "/icons/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
-      {
-        source: "/_next/static/:path*",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-      },
+      ...(process.env.NODE_ENV === "production"
+        ? [
+            {
+              // En dev, ces URLs sont stables et réécrites à chaque compile: les déclarer
+              // « immutable » autorise le cache (navigateur, puis service worker) à figer un
+              // runtime webpack périmé -> « reading 'call' » au premier reload après un rebuild.
+              source: "/_next/static/:path*",
+              headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+            },
+          ]
+        : []),
     ];
   },
   // Redirects: ensure offline is reachable

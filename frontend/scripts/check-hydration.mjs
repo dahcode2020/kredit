@@ -199,10 +199,49 @@ try {
   }
 } catch { /* pas de sw.js → rien à vérifier */ }
 
+// --- Service worker + chunks du bundler: un cache sur une URL instable fige un runtime périmé
+// (/_next/static/chunks/webpack.js est réécrit à chaque compile) -> « TypeError: Cannot read
+// properties of undefined (reading 'call') » dans options.factory, côté dev comme au 1er reload
+// après un déploiement. Le worker doit donc (a) connaître le hash de build, (b) n'écrire que ce
+// que le serveur déclare durable, (c) ne pas être enregistré hors production.
+try {
+  const sw = readFileSync(join(ROOT, SW_FILE), "utf8");
+  const classifieur = sw.match(/function isStaticAsset\([\s\S]*?\n\}/)?.[0] ?? "";
+  if (!classifieur || /startsWith\(['"]\/_next\/static\/['"]\)\s*return true/.test(classifieur) || !/assetHache\(/.test(classifieur)) {
+    problems.push({
+      rel: SW_FILE, line: lineOf(sw, sw.indexOf("function isStaticAsset")),
+      match: "isStaticAsset() déclare les /_next/ cacheables sans exiger un hash de build",
+      why: "Un chunk sans hash de build (webpack.js, main-dev.js, app/…/page.js) change de contenu à chaque compilation: le resservir depuis un cache décale la table des modules du runtime webpack et le navigateur lève « reading 'call' ». La classification doit passer par assetHache().",
+      rule: "sw-cache-unstable-chunk",
+    });
+  }
+  const ecritures = [...sw.matchAll(/cache\.put\(/g)];
+  const nonGardees = ecritures.filter((m) => !sw.slice(Math.max(0, m.index - 300), m.index).includes("reponseCacheable("));
+  if (nonGardees.length) {
+    problems.push({
+      rel: SW_FILE, line: lineOf(sw, nonGardees[0].index),
+      match: `cache.put() sans garde reponseCacheable() (${nonGardees.length}×)`,
+      why: "Une réponse no-store/no-cache (tout le dev, et les pages HTML) ne doit jamais être écrite en cache, sinon le worker ressert un asset périmé dès que le réseau tombe (et en dev, tous les chunks).",
+      rule: "sw-cache-unstable-chunk",
+    });
+  }
+} catch { /* pas de sw.js → rien à vérifier */ }
+
+try {
+  const reg = readFileSync(join(ROOT, "components/pwa/SWRegister.tsx"), "utf8");
+  if (!/NODE_ENV\s*[!=]==?\s*["']production["']/.test(reg) || !/unregister\(/.test(reg)) {
+    problems.push({
+      rel: "components/pwa/SWRegister.tsx", line: 1, match: "enregistrement du service worker sans garde NODE_ENV (ou sans nettoyage)",
+      why: "En dev, le worker met en cache des chunks non hachés réécrits à chaque compile: il ne doit pas être enregistré, et doit désenregistrer les installations héritées (unregister + purge des caches kredit-*).",
+      rule: "sw-registered-in-dev",
+    });
+  }
+} catch { /* pas de SWRegister → rien à vérifier */ }
+
 if (problems.length) {
   console.error(`\n✖ ${problems.length} risque(s) d'hydratation détecté(s):\n`);
   for (const p of problems) console.error(`  ${p.rel}:${p.line}  [${p.rule}]\n    ${p.match}\n    → ${p.why}\n`);
   console.error("Patterns corrects: docs/hydration.md\n");
   process.exit(1);
 }
-console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, URL préfixée par une langue, copie de métadonnée non traduite, HTML en cache SW).");
+console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, URL préfixée par une langue, copie de métadonnée non traduite, HTML en cache SW, chunk non haché en cache, worker enregistré en dev).");

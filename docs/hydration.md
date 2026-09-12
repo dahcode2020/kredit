@@ -21,6 +21,11 @@ l'écart : il jette l'arbre et re-rend tout (d'où le flash et les corrections q
 | `validateDOMNesting` | HTML invalide : le navigateur corrige le HTML, React hydrate l'original |
 | aucun autre warning | écart de structure (voir §2) |
 
+L'overlay peut aussi porter une erreur purement runtime, sans warning React : **`TypeError: Cannot read
+properties of undefined (reading 'call')`** avec `options.factory` dans la pile, pointant sur
+`.next/static/chunks/webpack.js`. Ce n'est pas un mismatch : le runtime webpack servi au navigateur ne
+connaît pas les identifiants de modules des chunks en cours (règle 12).
+
 ## 2. Règles appliquées dans ce dépôt
 
 1. **Aucune API navigateur pendant le render** d'un client component
@@ -168,6 +173,34 @@ ajoutée à `scripts/check-hydration.mjs`, `skip-link-in-root-layout` — la pre
 (option `only`) — parce que le skip-link du layout racine était à la fois français et dédoublé :
 `tests/a11y/axe.spec.ts`, réécrit pour lire les sources au lieu de s'auto-vérifier, contrôle qu'il n'existe
 **qu'un seul** `href="#main"`, rendu par `app/[locale]/layout.tsx` avec `common:shell.skipToContent`.
+
+### 12. Un chunk sans hash de build ne se met jamais en cache — ni par le SW, ni par un `immutable` en dev
+
+Deux fichiers se ressemblent et ne se traitent pas pareil :
+
+- `/_next/static/chunks/main-4c9c1e9bb24fb188.js` — **production** : le nom porte le hash, le contenu est
+  immuable par construction ;
+- `/_next/static/chunks/webpack.js` — **développement** : URL stable, contenu réécrit à **chaque** compile.
+
+En cache-first, le second renvoie un `__webpack_modules__` d'une compilation morte pendant que les autres
+chunks viennent de la compilation courante : `__webpack_require__(id)` renvoie `undefined`, et la ligne
+suivante du runtime échoue sur `module.exports = factory.call(...)`. Le symptôme est donc un chargement qui
+marche, puis casse après `Ctrl-C` / `rm -rf .next` / un `npm ci` — et un reload ne change rien, le cache
+gardant l'exemplaire périmé. Le dépôt applique trois gardes :
+
+1. `public/sw.js` classe les assets via `assetHache()` : sans hash dans le nom de fichier, la requête
+   `/_next/**` n'est **pas interceptée du tout** (le navigateur reprend la main, le HMR respire) ;
+2. `public/sw.js` n'écrit en cache qu'après `reponseCacheable()` — `no-store`, `no-cache`, `max-age=0` et
+   les réponses non-`ok` sont refusés, sur `CacheFirst`, `StaleWhileRevalidate` et `preloadResponse` ;
+3. `components/pwa/SWRegister.tsx` ne s'enregistre pas hors `production` et **désenregistre** les
+   installations héritées (purge des caches `kredit-*` même si la registration a disparu), pour qu'un poste
+   déjà empoisonné se répare tout seul au rechargement suivant.
+
+`next.config.js` ne déclare `/_next/static/:path*` en `immutable` **qu'en production** : ce réglage
+appliqué au dev équivalait à signer l'arrêt de validité du cache pour des fichiers qui changent en permanence
+(Next 16 émet d'ailleurs un avertissement explicite sur ce header). Les trois gardes sont tenues par
+`check:hydration` (règles `sw-cache-unstable-chunk`, `sw-registered-in-dev`) et le comportement réel du
+worker est exécuté dans `tests/pwa/sw-cache-policy.spec.ts`.
 
 ---
 
