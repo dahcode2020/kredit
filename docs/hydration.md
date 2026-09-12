@@ -202,6 +202,23 @@ appliqué au dev équivalait à signer l'arrêt de validité du cache pour des f
 `check:hydration` (règles `sw-cache-unstable-chunk`, `sw-registered-in-dev`) et le comportement réel du
 worker est exécuté dans `tests/pwa/sw-cache-policy.spec.ts`.
 
+### 13. Une panne de rendu ne doit jamais vider la page — `error.tsx` et `global-error.tsx`
+
+Symptôme: la page s'affiche, puis devient **blanche**, sans message. React 18 démonte l'arbre entier
+quand une exception remonte jusqu'à la racine et qu'**aucune frontière d'erreur n'est déclarée** ; en
+production il n'y a même pas d'overlay pour le dire. Le dépôt pose donc les deux fichiers App Router:
+
+- `app/[locale]/error.tsx` — segment localized : panneau avec `reset()` (re-render du segment), repli
+  vers `/${locale}`, copie intégralement en `common:shell.error*` (quatre langues), détail technique
+  affiché **uniquement** hors production ;
+- `app/global-error.tsx` — dernier recours quand le layout racine tombe : il rend lui-même
+  `<html lang>` et `<body>` (sinon le navigateur reçoit un fragment sans racine).
+
+Les deux relisent la locale dans le chemin (`usePathname`, déterministe serveur ↔ client) et **jamais**
+dans un store : une frontière doit rester debout quand le reste de l'application est justement en train
+de tomber. Un lien interne vers une route inexistante produit le même écran blanc après un clic —
+d'où `npm run check:links` (voir `docs/tests.md`).
+
 ---
 
 ## 3. Vérification

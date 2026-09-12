@@ -5,8 +5,10 @@ name: CI
 # NB: les étapes frontend n'ont plus de « || echo ... pending »: jest/ts-jest/jsdom sont
 # désormais déclarés dans frontend/package.json (devDependencies) et `.eslintrc.json` existe —
 # ces jobs échouaient en silence (outil absent) au lieu de remonter les régressions, dont
-# `check:hydration` (APIs navigateur au render + imbrications HTML invalides) et `check:copy`
+# `check:hydration` (APIs navigateur au render + imbrications HTML invalides), `check:copy`
 # (budget de copie non traduite: 0 dans les coquilles, décroissant ailleurs — `npm run check:copy:update`
+# ne fait QUE redescendre la barre), `check:links` (toute cible interne d'un href/push/redirect
+# correspond à un page.tsx réel — un lien vers une route absente ne se voit qu'au clic)
 # après une traduction, jamais avant).
 on:
   push: { branches: [main, arena/*] }

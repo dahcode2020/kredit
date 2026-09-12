@@ -325,5 +325,12 @@
   "examples.formatPercent": "Prozent",
   "examples.formatAddress": "Adresse BE",
   "examples.formatPhone": "Telefon",
-  "compliance.audit": "Prüfpfad"
+  "compliance.audit": "Prüfpfad",
+  "shell.errorTitle": "Eine Aktion ist fehlgeschlagen",
+  "shell.errorBody": "Dieser Teil der Seite konnte nicht angezeigt werden. Der Rest der Website bleibt nutzbar.",
+  "shell.errorRetry": "Erneut versuchen",
+  "shell.errorHome": "Zurück zur Startseite",
+  "shell.errorDevHint": "Detail für die Entwicklung",
+  "shell.errorGlobalTitle": "KREDIT konnte nicht starten",
+  "shell.errorGlobalBody": "Die Seite konnte insgesamt nicht gerendert werden. Neu laden oder von der Startseite aus neu beginnen."
 }

@@ -110,7 +110,12 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   `npm run check:copy:update` redescend la barre, jamais l'inverse), et `npm run check:hydrate`
   (hydratation réelle via jsdom, option `--skew-intl`, et `--expect`/`--forbid` pour contrôler le texte
   hydraté — utile pour le chrome des coquilles, invisible dans le HTML serveur ; toujours avec une route
-  préfixée par la locale, sinon le middleware renvoie sur `/fr/…` et le test échoue pour la mauvaise raison)
+  préfixée par la locale, sinon le middleware renvoie sur `/fr/…` et le test échoue pour la mauvaise raison).
+  `check:links` croise chaque `href`/`router.push`/`redirect` du code et chaque URL stockée dans un
+  dictionnaire avec les `page.tsx` existants : c'est le contrôle qui a manqué quand `/fr/login` a paru
+  « faire disparaître le site » (un lien mort ne casse ni le lint ni le build, il ne se voit qu'au clic).
+  Les segments dynamiques sont des jokers dans les deux sens ; un cas délibéré s'échappe avec un
+  commentaire `check-routes:ignore` sur la ligne.
 - `frontend/tests/unit/i18n.test.ts` — t('fr', 'hero.title') + fr-BE override
 
 **Commande** : `npm run test:unit` → `jest --testPathPattern='tests/unit|__tests__' --coverage`

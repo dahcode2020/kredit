@@ -325,5 +325,12 @@
   "examples.formatPercent": "Pourcentage",
   "examples.formatAddress": "Adresse BE",
   "examples.formatPhone": "Téléphone",
-  "compliance.audit": "Audit"
+  "compliance.audit": "Audit",
+  "shell.errorTitle": "Une action a échoué",
+  "shell.errorBody": "Cette partie de la page n'a pas pu s'afficher. Le reste du site reste utilisable.",
+  "shell.errorRetry": "Réessayer",
+  "shell.errorHome": "Retour à l'accueil",
+  "shell.errorDevHint": "Détail pour le développement",
+  "shell.errorGlobalTitle": "KREDIT n'a pas pu démarrer",
+  "shell.errorGlobalBody": "La page n'a pas pu être affichée du tout. Rechargez, ou repartez de l'accueil."
 }

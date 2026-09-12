@@ -325,5 +325,12 @@
   "examples.formatPercent": "Percentage",
   "examples.formatAddress": "BE address",
   "examples.formatPhone": "Phone",
-  "compliance.audit": "Audit"
+  "compliance.audit": "Audit",
+  "shell.errorTitle": "Something went wrong",
+  "shell.errorBody": "This part of the page could not be rendered. The rest of the site keeps working.",
+  "shell.errorRetry": "Try again",
+  "shell.errorHome": "Back to home",
+  "shell.errorDevHint": "Development detail",
+  "shell.errorGlobalTitle": "KREDIT could not start",
+  "shell.errorGlobalBody": "The page failed to render entirely. Reload, or start again from the home page."
 }

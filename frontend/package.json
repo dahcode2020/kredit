@@ -15,8 +15,9 @@
     "test:cov": "jest --coverage",
     "check:hydration": "node scripts/check-hydration.mjs && node scripts/check-dom-nesting.mjs",
     "check:copy": "node scripts/check-copy.mjs",
-    "check": "npm run check:hydration && npm run check:copy",
+    "check": "npm run check:hydration && npm run check:copy && npm run check:links",
     "check:copy:update": "node scripts/check-copy.mjs --update",
+    "check:links": "node scripts/check-routes.mjs",
     "check:hydrate": "node scripts/hydrate-check.mjs"
   },
   "dependencies": {

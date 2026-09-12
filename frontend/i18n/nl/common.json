@@ -325,5 +325,12 @@
   "examples.formatPercent": "Percentage",
   "examples.formatAddress": "Adres BE",
   "examples.formatPhone": "Telefoon",
-  "compliance.audit": "Audit"
+  "compliance.audit": "Audit",
+  "shell.errorTitle": "Een actie is mislukt",
+  "shell.errorBody": "Dit onderdeel van de pagina kon niet worden weergegeven. De rest van de site blijft werken.",
+  "shell.errorRetry": "Opnieuw proberen",
+  "shell.errorHome": "Terug naar startscherm",
+  "shell.errorDevHint": "Detail voor ontwikkeling",
+  "shell.errorGlobalTitle": "KREDIT kon niet starten",
+  "shell.errorGlobalBody": "De pagina volledig mislukt bij het weergeven. Herlaad, of ga terug naar het startscherm."
 }
