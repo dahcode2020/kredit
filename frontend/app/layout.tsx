@@ -1,5 +1,6 @@
 import "./globals.css";
 import SWRegister from "@/components/pwa/SWRegister";
+import { DEV_SW_HEAL_SCRIPT } from "@/lib/dev-sw-heal";
 import { SITE_ORIGIN } from "@/lib/seo";
 
 export const metadata = {
@@ -68,6 +69,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        {process.env.NODE_ENV !== "production" ? (
+          // Auto-réparation d'un worker hérité qui gèlerait les chunks de dev; jamais en prod.
+          <script id="kredit-dev-sw-heal" dangerouslySetInnerHTML={{ __html: DEV_SW_HEAL_SCRIPT }} />
+        ) : null}
       </head>
       <body className="bg-white text-ink antialiased font-body">
         {/* Pas de skip-link ici : son libellé est de la copie à traduire, et ce layout ne connaît pas

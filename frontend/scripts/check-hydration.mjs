@@ -228,6 +228,21 @@ try {
 } catch { /* pas de sw.js → rien à vérifier */ }
 
 try {
+  const sw2 = readFileSync(join(ROOT, SW_FILE), "utf8");
+  const directs = (sw2.match(/event\.respondWith\(/g) || []).length;
+  const viaHelper = (sw2.match(/repondre\(event,/g) || []).length;
+  const helperOk = /function repondre\(event, valeur\)\s*\{\s*event\.respondWith\(versResponse\(valeurr?\)\);?/m.test(sw2) || /event\.respondWith\(versResponse\(valeur\)\);/.test(sw2);
+  if (directs > 1 || !viaHelper || !helperOk) {
+    problems.push({
+      rel: SW_FILE, line: lineOf(sw2, sw2.indexOf("respondWith")),
+      match: `respondWith utilisé ${directs}× sans passer par le garde-fou repondre(event, …)`,
+      why: "Un event.respondWith() qui reçoit undefined, null ou une promesse rejetée fait échouer la requête interceptée (« Failed to convert value to 'Response' ») : le worker transforme une panne réseau en page blanche. Tout appel doit passer par le helper qui force une Response (Response.error() en dernier recours).",
+      rule: "sw-respondwith-response",
+    });
+  }
+} catch { /* pas de sw.js → rien à vérifier */ }
+
+try {
   const reg = readFileSync(join(ROOT, "components/pwa/SWRegister.tsx"), "utf8");
   if (!/NODE_ENV\s*[!=]==?\s*["']production["']/.test(reg) || !/unregister\(/.test(reg)) {
     problems.push({
@@ -244,4 +259,4 @@ if (problems.length) {
   console.error("Patterns corrects: docs/hydration.md\n");
   process.exit(1);
 }
-console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, URL préfixée par une langue, copie de métadonnée non traduite, HTML en cache SW, chunk non haché en cache, worker enregistré en dev).");
+console.log("✔ check-hydration: aucun motif à risque (APIs navigateur au render, band-aid suppressHydrationWarning, locale implicite, dates sans décalage, temps relatif au render, tables/tag de locale en dur, URL préfixée par une langue, copie de métadonnée non traduite, HTML en cache SW, chunk non haché en cache, worker enregistré en dev, respondWith pouvant rendre autre chose qu'une Response).");

@@ -6,7 +6,7 @@
 // - FINANCIAL_DATA: NetworkOnly (never cache — payments, credit, investments API & docs)
 // Never cache financial/personal sensitive data without encryption — per requirement.
 
-const VERSION = 'kredit-v7'; // v5: jamais de HTML en cache • v6: manifeste par locale • v7: jamais de chunk non haché en cache
+const VERSION = 'kredit-v8'; // v5: jamais de HTML en cache • v6: manifeste par locale • v7: jamais de chunk non haché en cache
 // v7: un chunk dont l'URL ne porte pas de hash de build (/_next/static/chunks/webpack.js, main-dev.js,
 // app/…/page.js, webpack-hmr) est réécrit à chaque compile. Le servir depuis un cache CacheFirst fige un
 // runtime webpack pendant que les chunks viennent d'une compile plus récente: les ids de modules ne
@@ -110,6 +110,28 @@ function isPublicContent(req) {
   return false;
 }
 
+function isNavigate(req) {
+  return req.mode === 'navigate' || req.destination === 'document';
+}
+
+// Toute réponse confisquée au réseau doit être une Response. Un appelant qui renvoie `undefined`,
+// `null` ou qui rejette fait échouer la requête interceptée avec « Failed to convert value to
+// 'Response' » — c'est-à-dire: le worker transforme une panne réseau en page blanche.
+async function versResponse(valeur) {
+  if (valeur instanceof Response) return valeur;
+  if (valeur && typeof valeur.then === 'function') {
+    try {
+      const res = await valeur;
+      if (res instanceof Response) return res;
+    } catch (_) { return Response.error(); }
+  }
+  return Response.error();
+}
+
+function repondre(event, valeur) {
+  event.respondWith(versResponse(valeur));
+}
+
 // ---------- Cache strategies ----------
 async function cacheFirst(req, cacheName) {
   const cached = await caches.match(req);
@@ -136,7 +158,13 @@ async function staleWhileRevalidate(req, cacheName) {
     }
     return res;
   }).catch(() => null);
-  return cached || (await fetchPromise) || fetchPromise;
+  // Ne JAMAIS résoudre autre chose qu'une Response: `cached || (await p) || p` renvoyait le
+  // promise elle-même (objet truthy) quand le réseau échouait sans cache — respondWith recevait
+  // alors `null` et le navigateur jetait « Failed to convert value to 'Response' », tuant la
+  // requête qui aurait pu récupérer le chunk manquant.
+  if (cached) return cached;
+  const fresh = await fetchPromise;
+  return fresh || Response.error();
 }
 
 // cacheName est conservé pour la signature des appels; le HTML n'y est jamais écrit.
@@ -162,6 +190,9 @@ async function networkFirst(req, cacheName, timeoutMs = 4000) {
     }
     const cached = await caches.match(req);
     if (cached) return cached;
+    // Réponse de secours pour les requêtes non-navigables: une vraie Response (Response.error()
+    // se comporte comme une coupure réseau vue de la page) et jamais un rejet nu.
+    if (!isNavigate(req) && !(req.url || '').includes('/api/')) return Response.error();
     // For API, return structured offline response
     if (req.url.includes('/api/')) {
       return new Response(JSON.stringify({ statusCode: 503, code: 'OFFLINE', message: 'Connexion requise — opération nécessite le serveur. Données financières non mises en cache par sécurité.' }), {
@@ -169,7 +200,7 @@ async function networkFirst(req, cacheName, timeoutMs = 4000) {
         headers: { 'Content-Type': 'application/json', 'X-KREDIT-Offline': '1' }
       });
     }
-    throw e;
+    return Response.error();
   }
 }
 
@@ -191,7 +222,7 @@ async function networkOnly(req) {
         headers: { 'Content-Type': 'application/json', 'X-KREDIT-Cache-Strategy': 'FINANCIAL_DATA', 'X-KREDIT-Offline': '1' }
       });
     }
-    throw e;
+    return Response.error();
   }
 }
 
@@ -243,14 +274,14 @@ self.addEventListener('fetch', (event) => {
 
   // Payloads RSC (navigations client-side Next) : cohérence stricte avec le document → réseau, jamais de cache.
   if (url.searchParams.has('_rsc') || req.headers.get('RSC') === '1') {
-    event.respondWith(networkOnly(req));
+    repondre(event, networkOnly(req));
     return;
   }
 
   // Only handle GET for caching; other methods always networkOnly
   if (req.method !== 'GET') {
     // Financial mutations must always hit server
-    event.respondWith(networkOnly(req));
+    repondre(event, networkOnly(req));
     return;
   }
 
@@ -258,7 +289,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) {
     // Allow caching of unsplash/CDN images as static (optional)
     if (req.destination === 'image' && url.hostname.includes('images.unsplash.com')) {
-      event.respondWith(staleWhileRevalidate(req, STATIC_CACHE));
+      repondre(event, staleWhileRevalidate(req, STATIC_CACHE));
       return;
     }
     return; // let browser handle
@@ -266,7 +297,7 @@ self.addEventListener('fetch', (event) => {
 
   // FINANCIAL_DATA — never cache
   if (isFinancialData(req)) {
-    event.respondWith(
+    repondre(event, 
       networkOnly(req)
     );
     return;
@@ -274,7 +305,7 @@ self.addEventListener('fetch', (event) => {
 
   // STATIC_ASSETS — CacheFirst (uniquement des URLs hachées/immuables)
   if (isStaticAsset(req)) {
-    event.respondWith(
+    repondre(event, 
       (async () => {
         // Try preload response first
         const preload = await event.preloadResponse;
@@ -291,14 +322,14 @@ self.addEventListener('fetch', (event) => {
 
   // AUTHENTICATED_CONTENT — NetworkFirst (no persistent sensitive cache)
   if (isAuthenticatedContent(req)) {
-    event.respondWith(networkFirst(req, PUBLIC_CACHE, 5000));
+    repondre(event, networkFirst(req, PUBLIC_CACHE, 5000));
     return;
   }
 
   // PUBLIC_CONTENT — navigation: toujours le réseau (document frais), fallback = page offline
   if (isPublicContent(req)) {
     if (req.mode === 'navigate') {
-      event.respondWith(
+      repondre(event, 
         (async () => {
           const preload = await event.preloadResponse;
           if (reponseCacheable(preload) && !(preload.headers.get('content-type') || '').includes('text/html')) {
@@ -312,16 +343,16 @@ self.addEventListener('fetch', (event) => {
       );
       return;
     }
-    event.respondWith(staleWhileRevalidate(req, PUBLIC_CACHE));
+    repondre(event, staleWhileRevalidate(req, PUBLIC_CACHE));
     return;
   }
 
   // Default: network first with offline fallback
   if (req.mode === 'navigate') {
-    event.respondWith(networkFirst(req, PUBLIC_CACHE));
+    repondre(event, networkFirst(req, PUBLIC_CACHE));
     return;
   }
-  event.respondWith(
+  repondre(event, 
     staleWhileRevalidate(req, PUBLIC_CACHE)
   );
 });

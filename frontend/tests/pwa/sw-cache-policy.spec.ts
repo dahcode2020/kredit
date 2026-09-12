@@ -91,9 +91,9 @@ function chargerWorker(reponse: (url: string) => Response) {
       },
       waitUntil: () => {},
     });
-    if (!captures.length) return { interceptee: false as const, statut: 0, ecritures };
+    if (!captures.length) return { interceptee: false as const, statut: 0, res: null as Response | null, ecritures };
     const res = await captures[0];
-    return { interceptee: true as const, statut: res.status, ecritures };
+    return { interceptee: true as const, statut: res.status, res, ecritures };
   };
 
   return { intercepte, ecritures };
@@ -113,8 +113,57 @@ describe('sw.js — le cache ne doit jamais geler un chunk non haché', () => {
       '/_next/webpack-hmr',
     ]) {
       const res = await intercepte(url);
-      expect({ url, ...res }).toEqual({ url, interceptee: false, statut: 0, ecritures: [] });
+      expect({ url, ...res, res: res.res ? 'Response' : null }).toEqual({
+        url,
+        interceptee: false,
+        statut: 0,
+        res: null,
+        ecritures: [],
+      });
     }
+  });
+
+  // « sw.js:1 Uncaught (in promise) TypeError: Failed to convert value to 'Response' »: vu en
+  // codespace, et c'est le worker qui l'a produit. Un staleWhileRevalidate dont le réseau échoue
+  // sans rien dans le cache résolvait `null` (l'expression `cached || (await p) || p` rendait le
+  // promesse elle-même, objet truthy) — respondWith recevait donc une valeur non-Response et
+  // **tuait la requête qui aurait pu récupérer le chunk manquant**. Le worker transformait une
+  // panne réseau en page blanche.
+  it('ne remet jamais au navigateur autre chose qu\'une Response, même réseau coupé', async () => {
+    const panne = () => {
+      throw new Error('réseau indisponible');
+    };
+    const { intercepte } = chargerWorker(panne as never);
+    for (const [url, init] of [
+      ['/icons/icon-512.png', { destination: 'image' }],
+      ['/fr/credit/simulator', {}],
+      ['/manifest/fr.json', {}],
+      ['/api/v1/credit/simulations', { destination: '' }],
+    ] as const) {
+      const r = await intercepte(url, init as Partial<Record<string, unknown>>);
+      expect({ url, interceptee: r.interceptee, estResponse: r.res instanceof Response }).toEqual({
+        url,
+        interceptee: true,
+        estResponse: true,
+      });
+    }
+  });
+
+  it('une navigation hors ligne sans precache renvoie une page, pas un rejet', async () => {
+    const { intercepte } = chargerWorker((() => {
+      throw new Error('hors ligne');
+    }) as never);
+    const r = await intercepte('/nl', { mode: 'navigate', destination: 'document' });
+    expect(r.interceptee).toBe(true);
+    expect(r.res instanceof Response).toBe(true);
+  });
+
+  it('un seul event.respondWith dans le worker, et c\'est celui du garde-fou', () => {
+    const { readFileSync } = require("fs") as typeof import("fs");
+    const sw = readFileSync("public/sw.js", "utf8") as string;
+    expect((sw.match(/event\.respondWith\(/g) || []).length).toBe(1);
+    expect(sw).toMatch(/event\.respondWith\(versResponse\(valeur\)\);/);
+    expect(sw).toMatch(/return fresh \|\| Response\.error\(\);/);
   });
 
   it('met bien en cache les assets hachés de production (sinon le PWA ne sert plus rien hors ligne)', async () => {

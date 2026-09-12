@@ -289,6 +289,21 @@ Contraintes appliquées dans `frontend/public/sw.js` :
    héritées et purge les caches `kredit-*` — un poste déjà parti en cache se répare au rechargement suivant.
    `next.config.js` ne déclare par ailleurs `/_next/static` en `immutable` qu'en production.
 
+8. **`respondWith` ne reçoit jamais autre chose qu'une `Response`.** Toute réponse confisquée au
+   réseau passe par `repondre(event, …)` → `versResponse(…)`: une valeur `undefined`/`null`, ou une
+   promesse rejetée, fait échouer la requête interceptée avec
+   `Uncaught (in promise) TypeError: Failed to convert value to 'Response'` — le worker transforme
+   alors une simple panne réseau en page blanche. Le `staleWhileRevalidate` historique
+   (`cached || (await fetchPromise) || fetchPromise`) rendait l'*objet promesse*, toujours truthy, puis
+   se résolvait en `null`. Dernier recours: `Response.error()`, exactement ce que la page verrait sans
+   worker. Règle `sw-respondwith-response` dans `check:hydration`.
+9. **Un onglet déjà empoisonné se répare tout seul, même si React ne démarre pas.** `app/layout.tsx`
+   sert, hors production uniquement, un script en ligne dans le `<head>` (`lib/dev-sw-heal.ts`): il
+   s'exécute **avant** les chunks de l'application, désenregistre toute registration héritée, purge les
+   caches `kredit-*`, puis recharge une fois (drapeau `sessionStorage`, donc pas de boucle possible).
+   C'est le seul endroit d'où l'on peut réparer un `webpack.js` figé en cache — tout correctif
+   applicatif, lui, ne s'exécute plus jamais si la page meurt avant l'hydratation.
+
 Ce fichier est vérifié hors CI par `npm --prefix frontend run check:hydration`, qui interdit
 les documents HTML dans `PRECACHE_URLS` (`sw-cached-document`), toute écriture de cache non gardée et
 tout enregistrement hors production (`sw-cache-unstable-chunk`, `sw-registered-in-dev`). Le comportement
