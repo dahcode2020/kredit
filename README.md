@@ -12,12 +12,17 @@
 ## 1. Démarrage ultra-rapide
 
 ```bash
-# Frontend PWA (Next.js) — TOUJOURS depuis `frontend/` (pas de package.json à la racine,
-# et `npm --prefix frontend ci` n'y fait pas une vraie installation propre: il laisse
-# node_modules/.bin/next absent, et `npx next` télécharge alors un Next majeur différent)
+# Frontend PWA (Next.js) — l'INSTALLATION se fait TOUJOURS dans `frontend/` (`npm ci --prefix
+# frontend` n'y fait pas une installation propre: il laisse node_modules/.bin/next absent, et
+# `npx next` télécharge alors un Next majeur différent — d'où la panne « reading 'call' »).
 cd frontend
-npm install
+npm ci --no-audit --no-fund
 npm run dev      # → http://localhost:3000  (bind 0.0.0.0)
+
+# Les scripts, eux, marchent des deux endroits: un package.json relais à la racine du monorepo
+# les transmet à frontend/ (`npm run dev`, `npm run check`, `npm run check:state`, `npm run fresh`).
+# `npm run <script>` à la racine échouait en ENOENT avant ce relais — c'est ce message d'npm, et non
+# une panne de l'application, que renvoie un `npm run check:assets` lancé depuis la racine.
 
 # Backend NestJS (optionnel, mocké côté front pour la démo)
 cd ../backend
@@ -34,6 +39,27 @@ docker compose up --build
 > `npm rebuild`. Sans cette approbation, rien ne casse au démarrage — mais `sharp` n'est plus vérifié,
 > et c'est l'optimisation d'images de `next start` qui tombe, plus tard, en production. Le contrôle
 > `tests/unit/npm-install-scripts.spec.ts` le refuse désormais dans la suite de tests.
+
+### Le site s'affiche, puis meurt : dans cet ordre
+
+Ce symptôme n'est pas une erreur de l'application, c'est un désaccord entre ce que le HTML référence
+et ce que le navigateur finit par exécuter. Les quatre commandes ci-dessous distinguent les cas, et
+une seule d'entre elle peut mentir (la dernière), parce que les trois premières ne regardent pas le
+même endroit:
+
+```bash
+npm run check:state   # l'état du POSTE: pull arrivé ? .next mélangé dev/prod ? compilation plus
+                      # vieille que les sources ? le fichier servi est-il octet pour octet celui du
+                      # disque ? (coupe court d'accuser le cache à tort)
+npm run fresh -- --look   # ce que la remise à zéro ferait, sans rien toucher
+npm run fresh             # tue le dev de CE projet, supprime .next-dev, relance `npm run dev`
+npm run check:assets      # serveur ouvert: chaque ressource référencée par le HTML est-elle servie ?
+```
+
+Puis **recharger l'onglet deux fois** : le premier chargement est celui où le script d'auto-réparation
+désenregistre le worker hérité et purge les caches `kredit-*`, le second est propre. Si un deuxième
+rechargement laisse encore l'overlay, la panne n'est plus réparable depuis le dépôt — envoyer la
+première ligne rouge de la Console (pas les suivantes) et la sortie de `check:assets`.
 
 **Comptes de démo (front mock):**
 - `customer@kredit.be / Customer123!` → `/fr/dashboard`

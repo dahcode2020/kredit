@@ -118,6 +118,20 @@ de dates de V8, et un CI en UTC laisserait passer un parse « à la locale du ru
   une page vide : le HTML pointe un chunk que le serveur ne fournit plus (`.next` régénéré sous un serveur
   en cours, build de prod et dev partageant le même répertoire, install tronquée). Sortie : 0 si tout ce
   que le HTML réclame est servi.
+- `npm run check:state` (aucun serveur requis, tout est mesuré sur le poste) : répond à la question que
+  `check:assets` ne peut pas trancher — *dans quel état est cette machine*. Cinq familles : le pull est-il
+  arrivé (`VERSION` de `public/sw.js` ≥ v8, présence du script d'auto-réparation dans `app/layout.tsx`,
+  et surtout présence de ces deux choses dans le **HTML réellement servi**) ; les dossiers compilés sont-ils
+  propres (`.next` contenant à la fois un `BUILD_ID` et `main-app.js` = dev et production ont partagé le
+  dossier, la panne « reading 'call' » assurée) ; la compilation est-elle plus vieille que les sources de plus
+  de 90 s (watcher inactif, `max_user_watches` bas) ; et le fichier servi est-il **octet pour octet** le
+  fichier du disque (sinon: un worker ou un cache ment, le serveur n'y est pour rien). `--detail` pour voir
+  les verts, `--base http://localhost:PORT` pour un autre port. Sortie 1 au premier rouge, avec l'ordre de
+  réparation dans le message.
+- `npm run fresh` (et `-- --look` pour ne rien toucher) : la remise à zéro en une commande — tue les
+  processus `next` **de ce projet uniquement** (critère = `/proc/<pid>/cwd`, parce que `ps` seul ne montre
+  aucun chemin pour `next-server`), supprime `.next-dev`, relance le dev. Les noms d'options courts existent
+  parce que npm réserve `--verbose` et `--dry-run` et ne les transmet pas au script.
   `check:links` croise chaque `href`/`router.push`/`redirect` du code et chaque URL stockée dans un
   dictionnaire avec les `page.tsx` existants : c'est le contrôle qui a manqué quand `/fr/login` a paru
   « faire disparaître le site » (un lien mort ne casse ni le lint ni le build, il ne se voit qu'au clic).
