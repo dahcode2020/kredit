@@ -5,6 +5,11 @@ const nextConfig = {
   poweredByHeader: false,
   generateEtags: true,
   images: {
+    // En dev seulement: le composant passe par /_next/image, qui relaie l'appel distant
+    // depuis le serveur. Hors du réseau (sandbox, CI, poste derrière un proxy qui bloque
+    // images.unsplash.com), chaque visuel répond 500 et Next affiche une overlay d'erreur
+    // par-dessus une page pourtant correcte. En production l'optimisation serveur reste active.
+    unoptimized: process.env.NODE_ENV !== "production",
     formats: ["image/avif", "image/webp"],
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }, { protocol: "https", hostname: "i.pravatar.cc" }],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],

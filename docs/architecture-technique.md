@@ -130,8 +130,14 @@ et transcode via les presets de `next.config.js` (`formats` AVIF/WebP, `deviceSi
 `remotePatterns` pour `images.unsplash.com` et `i.pravatar.cc`). **Conséquence à ne pas oublier:**
 `sharp` est en `dependencies` et non en `devDependencies` — c'est l'optimiseur de `next start` qui
 l'appelle, et le `Dockerfile` runtime ne copie que `node_modules` + `.next`. Sans lui, chaque image
-optimisée répond 500 **uniquement en prod** (`next dev` a son propre chemin) ; le contrôle est
+optimisée répond 500 ; le contrôle est
 `curl '/_next/image?url=%2F<asset>&w=256&q=75'` → `200 image/webp`.
+
+Le dev n'est **pas** épargné quand le serveur n'a pas de sortie réseau (sandbox, CI, poste derrière
+un proxy qui bloque `images.unsplash.com`) : `/_next/image` relaie l'appel distant **depuis le serveur**,
+chaque visuel répond alors `500` et Next pose une overlay d'erreur sur une page pourtant saine. D'où
+`images.unoptimized: process.env.NODE_ENV !== "production"` dans `next.config.js` — le HTML de dev
+référence l'URL d'origine directement (le navigateur, lui, a le réseau), et la prod garde l'optimiseur.
 
 **Dates & heures:** tout affichage utilisateur passe par `lib/formatters.ts` — `resolveDate` ancre
 les chaînes sans décalage sur UTC (jamais `new Date("<chaîne>")` dans un composant), le `timeZone`
